@@ -1,0 +1,60 @@
+.background {
+    width: 800px;
+    height: 480px;
+}
+
+
+.background>img {
+    position:absolute;
+    margin-left: 300px;
+}
+
+.alertbox {
+    background-color:#999999;
+    width: 560px;
+    height: 200px;
+    margin:auto;
+    margin-top: 20%;
+    padding: 10px 10px 10px 10px;
+    opacity: 0.7;
+}
+
+.error {
+    -webkit-animation: FADE-IN 7s infinite;
+    -moz-animation:    FADE-IN 7s infinite;
+    -o-animation:      FADE-IN 7s infinite;
+    animation:         FADE-IN 7s infinite;
+}
+
+
+@-webkit-keyframes FADE-IN {
+    0%   { opacity: 0; }
+    50%   { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  @-moz-keyframes FADE-IN {
+    0%   { opacity: 0; }
+    50%   { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  @-o-keyframes FADE-IN {
+    0%   { opacity: 0; }
+    50%   { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  @keyframes FADE-IN {
+    0%   { opacity: 0; }
+    50%   { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+.alertbox>h1 {
+    font-size:26px;
+    text-align: center;
+    margin-top: 10%;
+}
+
+.alertbox>p {
+    font-size:16px;
+    text-align: center;
+}
