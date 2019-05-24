@@ -23,7 +23,9 @@ connection.query('SELECT * from test', function(err, rows, fields) {
   if (!err) {
     console.log('The solution is: ', rows);
     app.get('/', (req, res) => {
-      res.render("main.ejs");
+      res.render("main.ejs", {
+        ip: '168.131.35.102'
+      });
     });
   }
   else {
@@ -33,5 +35,3 @@ connection.query('SELECT * from test', function(err, rows, fields) {
   
 }
 });
-
-connection.end();
