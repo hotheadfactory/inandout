@@ -21,17 +21,17 @@ connection.connect();
 
 connection.query('SELECT * from test', function(err, rows, fields) {
   if (!err) {
-    console.log('The solution is: ', rows);
+    console.log(rows);
     app.get('/', (req, res) => {
       res.render("main.ejs", {
-        ip: '168.131.35.102'
+        rows
       });
     });
   }
   else {
-  app.get('/', (req, res) => {
-    res.render("error.ejs");
-  });
-  
-}
+    app.get('/', (req, res, err) => {
+      console.log(err);
+      res.render("error.ejs");
+    }); 
+  }
 });
