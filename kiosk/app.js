@@ -1,18 +1,21 @@
-var express = require ('express');
-var app = express();
-var mysql      = require('mysql');
-var connection = mysql.createConnection({
+let {PythonShell} = require ('python-shell');
+const express = require ('express');
+const app = express();
+/*const mysql      = require('mysql');
+const connection = mysql.createConnection({
     host    : '168.131.35.102',
     user    : 'innout',
     password: 'ecnv2019',
     database: 'innout_users',
     port    :  43306
-});
-var rfid=require('node-rfid');
+});*/
+let cardno = 0;
+let pyshell = new PythonShell('Read.py');
 
 const port = 80;
 
 app.use(express.static('public'));
+app.set('view engine', 'ejs');
 
 app.listen(port, () => {
     console.log("Server is on (Port "+port+")");
@@ -23,21 +26,22 @@ app.listen(port, () => {
     });
 });
 
-connection.connect();
+//connection.connect();
 
-connection.query('SELECT * from test', function(err, rows, fields) {
-  if (!err) {
-    console.log(rows);
-    app.get('/', (req, res) => {
-      res.render("main.ejs", {
-        rows
-      });
-    });
-  }
-  else {
-    app.get('/', (req, res, err) => {
+app.get('/', (req, res, err) => {
       console.log(err);
-      res.render("error.ejs");
-    }); 
-  }
+      res.render("main.ejs", cardno); //DB 유지보수중 임시
+});
+
+var cardEntry = function (callback) {
+    pyshell.on('message', function(message) {
+        callback(message);
+    });
+    pyshell.end(function(err, code, signal) {
+        if(err) throw (err);
+    });
+};
+
+cardEntry(function(cardno) {
+   console.log(cardno);
 });
