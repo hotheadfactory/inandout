@@ -2,17 +2,31 @@
 <html>
 <head>
     <title>INANDOUT CLIENT v0.0.1</title>
+    <link href="https://fonts.googleapis.com/css?family=Noto+Sans+KR&display=swap" rel="stylesheet">
+    
 </head>
 <body>
     <link rel="stylesheet" href="stylesheets/style.css" />
     <div class="background">
-        <img src="images/logo.png" width=200>
     </div>
-    <div class="number_button">
-        <p>이곳에 RFID 인식을 테스트힙니다.콘솔창 확인!</p>
-        <%=cardno%>
-    </div> 
-
+    <div id= "weather_panel">
+	<div id= "weather_icon">맑음</div>
+	<div id= "weather_info">
+	    <div id="weather_region">광주광역시</div>
+	    <div id="weather_degree">27'C</div>
+	</div>
+    </div>
+    <div class="card_entry">
+        <input type="button" value="카드 인식" onclick="entry();"/>
+    </div>
+    <script language="javascript">
+	function entry() {
+	    setTimeout(function() {
+		window.open("/entry", 'win', 'width=600,height=300,top=50,left=100,scrollbars=no,resizeable=no');
+		<!--location.href = '/entry';-->
+	    }, 1000);
+	}
+    </script>
 </body>
 </html>
 

@@ -1,6 +1,7 @@
-let {PythonShell} = require ('python-shell');
 const express = require ('express');
+//const card = require('./rfid');
 const app = express();
+const rc522 = require("rc522");
 /*const mysql      = require('mysql');
 const connection = mysql.createConnection({
     host    : '168.131.35.102',
@@ -9,8 +10,7 @@ const connection = mysql.createConnection({
     database: 'innout_users',
     port    :  43306
 });*/
-let cardno = 0;
-let pyshell = new PythonShell('Read.py');
+let cardno = '0';
 
 const port = 80;
 
@@ -26,22 +26,22 @@ app.listen(port, () => {
     });
 });
 
+
 //connection.connect();
 
-app.get('/', (req, res, err) => {
-      console.log(err);
-      res.render("main.ejs", cardno); //DB 유지보수중 임시
+app.get('/', function (req, res) {
+      res.render("main.ejs",{ cardno : cardno } );
+});
+app.get('/entry', function (req, res) {
+    res.render("entry.ejs", { cardno : cardno } ); // 카드 엔트리
 });
 
-var cardEntry = function (callback) {
-    pyshell.on('message', function(message) {
-        callback(message);
-    });
-    pyshell.end(function(err, code, signal) {
-        if(err) throw (err);
-    });
-};
+function setCardNo(num) {
+    cardno = num;
+}
 
-cardEntry(function(cardno) {
-   console.log(cardno);
+rc522(function(rfidSerialNumber){
+	setCardNo(rfidSerialNumber);
+	console.log(cardno);
+	setTimeout(setCardNo, 5000, 0);
 });

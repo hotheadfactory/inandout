@@ -1,0 +1,23 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>INANDOUT CLIENT v0.0.1</title>
+    <link href="https://fonts.googleapis.com/css?family=Noto+Sans+KR&display=swap" rel="stylesheet">
+</head>
+<body onload="checkCardNo();">
+    <link rel="stylesheet" href="stylesheets/entry.css" />
+    <div class="card_debug">
+        <div class="id_info">
+	<% if(cardno != '0') { %>
+	    <div class="profile">
+		<%=cardno %>님, 환영합니다!
+	    </div>
+	<% } else { %>
+	    <div class="card_error">카드가 인식되지 않았습니다!</div>
+	<% } %>
+	</div>
+    </div> 
+</body>
+</html>
+
+
