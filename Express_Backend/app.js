@@ -260,6 +260,61 @@ const reservation = function(
   });
 };
 
+app.post("/process/reservation/out", function(req, res) {
+  let paramMemberId = req.body.memberid;
+  let paramOrganizationId = req.body.organizationId;
+  if (pool) {
+    outRoom(paramMemberId, paramOrganizationId, function(err, result) {
+      if (err) {
+        console.log("errer", err);
+        res.send({
+          code: 400,
+          success: false
+        });
+      } else {
+        console.log("errer", result);
+        res.send({
+          code: 200,
+          success: true
+        });
+      }
+    });
+  }
+});
+
+const outRoom = function(memberid, organizationId, callback) {
+  pool.getConnection(function(err, conn) {
+    if (err) {
+      if (conn) {
+        conn.release();
+      }
+      callback(err, null);
+      return;
+    }
+    console.log("데이어베이스 연결 스레드 아이디 : " + conn.threadId);
+    const tablename = "reservation";
+    let exec = conn.query(
+      `update ${tablename} set isout = 1 where isout=0 and memberid= ? and organizationId = ?`,
+      [memberid, organizationId],
+      function(err, rows) {
+        conn.release();
+        console.log("실행된 SQL : " + exec.sql);
+        if (err) {
+          callback(err, null);
+          return;
+        }
+        if (rows.affectedRows > 0) {
+          console.log("성공");
+          callback(null, rows);
+        } else {
+          console.log("찾지못함");
+          callback(null, null);
+        }
+      }
+    );
+  });
+};
+
 var port = 3000;
 app.listen(port, function() {
   console.log("listening on port:" + port);
