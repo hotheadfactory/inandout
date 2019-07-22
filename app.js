@@ -3,6 +3,7 @@ const express = require ('express');
 const app = express();
 const Mfrc522 = require("mfrc522-rpi");
 const SoftSPI = require("rpi-softspi");
+const beep = require('beepbeep');
 
 /*const mysql      = require('mysql');
 const connection = mysql.createConnection({
@@ -57,7 +58,7 @@ setInterval(function() {
   if (!response.status) {
     return;
   }
-  console.log("Card detected, CardType: " + response.bitSize);
+  //console.log("Card detected, CardType: " + response.bitSize);
 
   //# Get the UID of the card
   response = mfrc522.getUid();
@@ -67,6 +68,7 @@ setInterval(function() {
   }
   //# If we have the UID, continue
   const uid = response.data;
+  beep();
   cardno = ('00000000' + uid[0].toString(16)+uid[1].toString(16)+uid[2].toString(16)+uid[3].toString(16)).substr(-8);
   console.log("UID: "+cardno);
   cardSensed = true;

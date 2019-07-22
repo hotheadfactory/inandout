@@ -44,4 +44,4 @@ setInterval(function() {
 
   //# Stop
   mfrc522.stopCrypto();
-}, 1000);
+}, 100);

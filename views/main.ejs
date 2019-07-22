@@ -16,15 +16,20 @@
 	    <div id="weather_degree">27'C</div>
 	</div>
     </div>
+    <div class="id_entry">
+	<input type="button" value="아이디로 로그인" onclick="login();"/>
+    </div>
     <div class="card_entry">
         <input type="button" value="카드 인식" onclick="entry();"/>
     </div>
     <script language="javascript">
 	function entry() {
 	    setTimeout(function() {
-		window.open("/entry", 'win', 'width=600,height=300,top=50,left=100,scrollbars=no,resizeable=no');
-		<!--location.href = '/entry';-->
-	    }, 1000);
+		window.open("/entry", 'win', 'width=600,height=300,top=70,left=100,scrollbars=no,resizeable=no');
+	    }, 2000);
+	}
+	function login() {
+	    window.open("/login", 'win', 'width=600,height=300,top=70,left=100,scrollbars=no,resizeable=no');
 	}
     </script>
 </body>

@@ -80,7 +80,36 @@ body {
 
 .card_entry {
     position: absolute;
-    bottom: 0px;
+    bottom: 10px;
     right: 10px;
     display: flex;   
 }
+
+.id_entry {
+    position: absolute;
+    bottom: 95px;
+    right: 10px;
+} 
+
+.card_entry>input {
+    background: #5454ec;
+    color: white;
+    width: 200px;
+    height: 80px;
+    font-size: 24px;
+    border-width: 0;
+    border-radius: 5px;
+}
+
+.id_entry>input {
+    background: white;
+    width: 200px;
+    height: 40px;
+    font-size: 16px;
+    border-width: 1px;
+    border-color: black;
+    border-radius: 5px;
+}
+
+.card_entry>input:active {
+    background: grey;

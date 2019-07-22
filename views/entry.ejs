@@ -3,14 +3,27 @@
 <head>
     <title>INANDOUT CLIENT v0.0.1</title>
     <link href="https://fonts.googleapis.com/css?family=Noto+Sans+KR&display=swap" rel="stylesheet">
+    <script language="javaScript">
+	function auto_close() {
+	    setTimeout(function() {
+		self.close();
+	    }, 2000);
+	}
+    </script>
 </head>
-<body onload="checkCardNo();">
+<body<% if(cardno == '0') { %> onload="auto_close();"<% } %>>
     <link rel="stylesheet" href="stylesheets/entry.css" />
     <div class="card_debug">
         <div class="id_info">
 	<% if(cardno != '0') { %>
 	    <div class="profile">
 		<%=cardno %>님, 환영합니다!
+	    </div>
+	    <div class="setting_button">
+		<input type="button" id="setting" value="Settings" />   
+	    </div>
+	    <div class="close_button">
+		<input type="button" id="exit "value="Exit" onClick="self.close();" />
 	    </div>
 	<% } else { %>
 	    <div class="card_error">카드가 인식되지 않았습니다!</div>
