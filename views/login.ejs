@@ -2,20 +2,31 @@
 <html>
 <head>
     <title>INANDOUT CLIENT v0.0.1</title>
+    <link href="https://fonts.googleapis.com/css?family=Noto+Sans+KR&display=swap" rel="stylesheet">
+    <script language="javaScript">
+	function auto_close() {
+	    setTimeout(function() {
+		self.close();
+	    }, 2000);
+	}
+    </script>
 </head>
 <body>
-    <link rel="stylesheet" href="stylesheets/style.css" />
-    <div class="background">
-        <img src="images/logo.png" width=200>
-    </div>
-    <div class="alertbox error">
-            <h1><img src="images/alert_200.png" width=24>  DB 서버와 통신할 수 없습니다.</h1>
-            <p>서버가 켜져 있고 연결이 가능한지 확인하세요.</p>
-    </div>
+    <link rel="stylesheet" href="stylesheets/entry.css" />
+    <div class="card_debug">
+        <div class="id_info">
+	    <div class="profile">
+		님, 환영합니다!
+	    </div>
+	    <div class="setting_button">
+		<input type="button" id="login" value="Settings" />   
+	    </div>
+	    <div class="close_button">
+		<input type="button" id="exit "value="Exit" onClick="self.close();" />
+	    </div>
+	</div>
+    </div> 
 </body>
-<script type="text/javascript">
-setTimeout("location.reload()", 10000)
-</script>
 </html>
 
 

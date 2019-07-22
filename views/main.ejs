@@ -58,12 +58,12 @@
 	    var date = time.getDate();
 	    var day = time.getDay();
 	    var weekday = ['일', '월', '화', '수', '목', '금', '토'];
-	    var ampm = (time.getHours()%12);
+	    var ampm = (time.getHours()/12);
 	    var hours = (time.getHours() < 13 ? (time.getHours() != 0 ? time.getHours() : 12) : time.getHours() - 12);
 	    var minutes = time.getMinutes();
 	    var seconds = time.getSeconds();
 		clockDate.innerText = `${year+1900}년 ${month+1}월 ${date}일 ${weekday[day]}요일`
-		clockAmpm.innerText = `${ampm?`오후`:`오전`}`;
+		clockAmpm.innerText = `${ampm>=1 ? `오후`:`오전`}`;
 		clockHour.innerText = `${hours<10?`0${hours}`:hours}`;
 		clockMin.innerText = `${minutes<10?`0${minutes}`:minutes}`;
 		clockSec.innerText = `${seconds<10?`:0${seconds}`:`:${seconds}`}`;

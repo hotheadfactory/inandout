@@ -3,8 +3,7 @@ const express = require ('express');
 const app = express();
 const Mfrc522 = require("mfrc522-rpi");
 const SoftSPI = require("rpi-softspi");
-const sound = require('play-sound')(opts = {});
-
+const { exec } = require('child_process');
 /*const mysql      = require('mysql');
 const connection = mysql.createConnection({
     host    : '168.131.35.102',
@@ -65,11 +64,13 @@ setInterval(function() {
   }
   //# If we have the UID, continue
   const uid = response.data;
-  beep();
   cardno = ('00000000' + uid[0].toString(16)+uid[1].toString(16)+uid[2].toString(16)+uid[3].toString(16)).substr(-8);
   console.log("Card detected. UID: "+cardno);
-  sound.play('detect.wav', function(err) {
-    if(err) throw err
+  exec('mplayer ./public/detect.wav', (error, stdout, stderr) => {
+    if(error) {
+      console.error(`exec error: #{error}`);
+      return;
+    }
   });
   cardSensed = true;
   setTimeout(function() {
@@ -80,7 +81,6 @@ setInterval(function() {
   //# Stop
   mfrc522.stopCrypto();
 }, 1000);
-
 
 app.get('/', function (req, res) {
       res.render("main.ejs");
