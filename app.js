@@ -68,7 +68,7 @@ setInterval(function() {
   beep();
   cardno = ('00000000' + uid[0].toString(16)+uid[1].toString(16)+uid[2].toString(16)+uid[3].toString(16)).substr(-8);
   console.log("Card detected. UID: "+cardno);
-  sound.play('detect.mp3', function(err) {
+  sound.play('detect.wav', function(err) {
     if(err) throw err
   });
   cardSensed = true;
