@@ -2,18 +2,32 @@
 <html>
 <head>
     <title>INANDOUT CLIENT v0.0.1</title>
-    <link href="https://fonts.googleapis.com/css?family=Noto+Sans+KR&display=swap" rel="stylesheet">
-    
 </head>
 <body>
     <link rel="stylesheet" href="stylesheets/style.css" />
-    <div class="background">
+    <div id="topbar">
+	<div id= "weather_panel">
+	    <div id= "weather_icon">맑음</div>
+	    <div id= "weather_info">
+		<div id="weather_region">광주광역시</div>
+		<div id="weather_degree">27'C</div>
+	    </div>
+	</div>
+	<div id="information">
+	   [공지] 동아리방 대청소 안내
+	</div>
     </div>
-    <div id= "weather_panel">
-	<div id= "weather_icon">맑음</div>
-	<div id= "weather_info">
-	    <div id="weather_region">광주광역시</div>
-	    <div id="weather_degree">27'C</div>
+    <div id="help_button">
+	<a href="/help">도움말</a>
+    </div>
+    <div id="clock">
+	<div id="clock_date"></div>
+	<div id="clock_time">
+	    <div id="clock_ampm">오전</div> 
+	    <div id="clock_hour">00</div>
+	    <div class="clock_divider">:</div>
+	    <div id="clock_min">00</div>
+	    <div id="clock_sec">00</div>
 	</div>
     </div>
     <div class="id_entry">
@@ -31,6 +45,36 @@
 	function login() {
 	    window.open("/login", 'win', 'width=600,height=300,top=70,left=100,scrollbars=no,resizeable=no');
 	}
+	
+	var clockDate = document.getElementById("clock_date");
+	var clockAmpm = document.getElementById("clock_ampm");
+	var clockHour = document.getElementById("clock_hour");
+	var clockMin = document.getElementById("clock_min");
+	var clockSec = document.getElementById("clock_sec");
+	function clock() {
+	    var time = new Date();
+	    var year = time.getYear();
+	    var month = time.getMonth();
+	    var date = time.getDate();
+	    var day = time.getDay();
+	    var weekday = ['일', '월', '화', '수', '목', '금', '토'];
+	    var ampm = (time.getHours()%12);
+	    var hours = (time.getHours() < 13 ? (time.getHours() != 0 ? time.getHours() : 12) : time.getHours() - 12);
+	    var minutes = time.getMinutes();
+	    var seconds = time.getSeconds();
+		clockDate.innerText = `${year+1900}년 ${month+1}월 ${date}일 ${weekday[day]}요일`
+		clockAmpm.innerText = `${ampm?`오후`:`오전`}`;
+		clockHour.innerText = `${hours<10?`0${hours}`:hours}`;
+		clockMin.innerText = `${minutes<10?`0${minutes}`:minutes}`;
+		clockSec.innerText = `${seconds<10?`:0${seconds}`:`:${seconds}`}`;
+	}
+
+	function init() {
+	    clock();
+	    setInterval(clock, 1000);
+	}
+
+	init();
     </script>
 </body>
 </html>

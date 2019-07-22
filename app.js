@@ -3,7 +3,7 @@ const express = require ('express');
 const app = express();
 const Mfrc522 = require("mfrc522-rpi");
 const SoftSPI = require("rpi-softspi");
-const beep = require('beepbeep');
+const sound = require('play-sound')(opts = {});
 
 /*const mysql      = require('mysql');
 const connection = mysql.createConnection({
@@ -15,9 +15,7 @@ const connection = mysql.createConnection({
 });*/
 
 //# This loop keeps checking for chips. If one is near it will get the UID and authenticate
-console.log("scanning...");
-console.log("Please put chip or keycard in the antenna inductive zone!");
-console.log("Press Ctrl-C to stop.");
+console.log("RC522 scanner activated");
 
 const softSPI = new SoftSPI({
   clock: 23, // pin number of SCLK
@@ -35,7 +33,7 @@ app.use(express.static('public'));
 app.set('view engine', 'ejs');
 
 app.listen(port, () => {
-    console.log("Server is on (Port "+port+")");
+    console.log("Kiosk daemon is on (Port "+port+")");
 });
 
 
@@ -58,7 +56,6 @@ setInterval(function() {
   if (!response.status) {
     return;
   }
-  //console.log("Card detected, CardType: " + response.bitSize);
 
   //# Get the UID of the card
   response = mfrc522.getUid();
@@ -70,7 +67,10 @@ setInterval(function() {
   const uid = response.data;
   beep();
   cardno = ('00000000' + uid[0].toString(16)+uid[1].toString(16)+uid[2].toString(16)+uid[3].toString(16)).substr(-8);
-  console.log("UID: "+cardno);
+  console.log("Card detected. UID: "+cardno);
+  sound.play('detect.mp3', function(err) {
+    if(err) throw err
+  });
   cardSensed = true;
   setTimeout(function() {
     cardno = '0';
@@ -87,5 +87,8 @@ app.get('/', function (req, res) {
 });
 app.get('/entry', function (req, res) {
     res.render("entry.ejs", { cardno : cardno } ); // 카드 엔트리
+});
+app.get('/login', function (req, res) {
+    res.render("login.ejs");
 });
 

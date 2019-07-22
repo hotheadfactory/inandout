@@ -1,5 +1,7 @@
-html {
-    font-family: 'Noto Sans KR', sans-serif;
+@import url(//fonts.googleapis.com/earlyaccess/jejugothic.css);
+
+body, table, div, input, p {
+    font-family: 'Jeju Gothic';
 }
 body {
     margin: 0;
@@ -35,6 +37,12 @@ body {
 .close_button>input, .setting_button>input {
     height: 45px;
     width: 100px;
+    background: white;
+    width: 150px;
+    height: 40px;
+    border-width: 1px;
+    border-color: black;
+    border-radius: 5px;
 }
 
 .setting_button {

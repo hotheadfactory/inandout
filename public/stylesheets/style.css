@@ -1,10 +1,14 @@
+@import url(//fonts.googleapis.com/earlyaccess/jejugothic.css);
 html {
     width:800px;
     height:480px;
-    font-family: 'Noto Sans KR', sans-serif;
+    background-image: url( "/images/inosplash.png" );
 }
 body {
     margin: 0;
+}
+body, table, div, input, p {
+    font-family: 'Jeju Gothic', sans-serif;
 }
 .background {
     text-align:center;
@@ -105,6 +109,7 @@ body {
     background: white;
     width: 200px;
     height: 40px;
+    font-family: 'Jeju Gothic', sans-serif;
     font-size: 16px;
     border-width: 1px;
     border-color: black;
@@ -113,3 +118,49 @@ body {
 
 .card_entry>input:active {
     background: grey;
+}
+
+#topbar {
+    display: flex;
+    height: 70px;
+    width: 100%;
+    background: linear-gradient( to bottom, rgba(190,190,190,1), rgba(0,0,0,0) );
+
+}
+
+#information {
+    margin-top: 20px;
+    font-size: 20px;
+}
+
+#help_button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+#clock {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+}	
+
+#clock_time {
+    display: flex;
+}
+
+#clock_ampm {
+    padding-top: 27px;
+}
+
+#clock_hour, #clock_min {
+    font-size: 50px; 
+}
+
+#clock_sec {
+   padding-top: 27px;
+}
+
+.clock_divider {
+    font-size: 30px;
+    padding-top: 7px;
+}
