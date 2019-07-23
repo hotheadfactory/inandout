@@ -19,11 +19,29 @@
 	    <div class="profile">
 		<%=cardno %>님, 환영합니다!
 	    </div>
+	    <div class="buttonWrapper">
+	    	<% if(cardno == '0f62c23f') { %>
+	    	<div id="in_button" class="inoutbutton">
+		    <div class="big">IN</big>
+		    <div class="button_sub">출입신청을 합니다.</big>
+	    	</div>
+	    	<% } else if(cardno == '1d30f75a') { %>
+	    	<div id="out_button" class="inoutbutton">
+		    <div class="big">OUT</div>
+		    <div class="button_sub">퇴실합니다.</div>
+	    	</div>
+	    	<% } else { %>
+	    	<div id="not_allowed" class="inoutbutton">
+		    <div class="warning">출입이 불가능합니다.</div>
+		    <div class="button_sub">오늘 오후 8시 전 예약자만<br>출입할 수 있습니다.</div>
+	    	</div>
+		<% } %>
+	    </div>
 	    <div class="setting_button">
-		<input type="button" id="setting" value="Settings" />   
+		<input type="button" id="setting" value="설정" />   
 	    </div>
 	    <div class="close_button">
-		<input type="button" id="exit "value="Exit" onClick="self.close();" />
+		<input type="button" id="exit "value="취소" onClick="self.close();" />
 	    </div>
 	<% } else { %>
 	    <div class="card_error">카드가 인식되지 않았습니다!</div>

@@ -43,10 +43,31 @@ body {
     border-width: 1px;
     border-color: black;
     border-radius: 5px;
+    font-size: 18px;
 }
 
 .setting_button {
     position: absolute;
     bottom: 60px;
     right: 10px;
+}
+
+.inoutbutton {
+    background-color: #BCBCBC;
+    width:340px;
+    height: 160px;
+    margin-top: 50px;
+    margin-left: 50px;
+}
+
+.big {
+    font-size: 100px;
+    margin-left: 10px;
+    margin-top: 40px;
+}
+
+.button_sub {
+    margin-left: 30px;
+    font-size: 20px;
+
 }
