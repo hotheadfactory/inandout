@@ -179,65 +179,43 @@ const findUserByCard = card => {
   });
 };
 
-app.post("/process/reservation", function(req, res) {
+app.post("/process/reservation/day", async function(req, res) {
   let paramDate = req.body.date;
   let paramMemberId = req.body.memberid;
   let paramUsername = req.body.username;
-  let paramORID = req.body.organizationId;
-  let paramORNAME = req.body.organizationName;
-  if (pool) {
-    reservation(paramDate, paramMemberId, paramUsername, paramORID, paramORNAME, function(
-      err,
-      result
-    ) {
-      if (err) {
-        console.log("errer", err);
-        res.send({
-          code: 400,
-          success: false
-        });
-      } else {
-        console.log("errer", result);
-        res.send({
-          code: 200,
-          success: true
-        });
-      }
-    });
+  if (!pool)
+    res.status(500).send({ status: 500, message: "데이터베이스에 연결되어 있지 않습니다." });
+  try {
+    const result = await reservationOfDay(paramDate, paramMemberId, paramUsername);
+    if (!result) throw new Error("이미 예약이 되어있습니다.");
+    res.status(200).send({ status: 200, message: "success" });
+  } catch (e) {
+    res.status(400).send({ status: 400, message: e.message });
   }
 });
 
-const reservation = function(date, memberid, username, organizationId, organizationName, callback) {
-  pool.getConnection(function(err, conn) {
-    if (err) {
-      if (conn) {
-        conn.release();
+const reservationOfDay = function(date, memberid, username) {
+  return new Promise((resolve, reject) => {
+    pool.getConnection(function(err, connection) {
+      if (err) {
+        if (conn) connection.release();
+        return reject(err);
       }
-      callback(err, null);
-      return;
-    }
-    console.log("데이어베이스 연결 스레드 아이디 : " + conn.threadId);
-    const tablename = "reservation";
-    const culumns = ["memberid", "username", "organizationId", "organizationName", "intime"];
-    let exec = conn.query(
-      `insert into ${tablename}(??) values("${memberid}","${username}",${organizationId},"${organizationName}",DATE "${date}")`,
-      [culumns],
-      function(err, rows) {
-        conn.release();
-        console.log("실행된 SQL : " + exec.sql);
-        if (err) {
-          callback(err, null);
-          return;
+      console.log("데이어베이스 연결 스레드 아이디 : ", connection.threadId);
+      const tablename = "reservation";
+      const culumns = ["memberid", "username", "resday", "resintime"];
+      const executeSql = connection.query(
+        `insert into ${tablename}(??) values("${memberid}","${username}","${date}","${date} 20:00:00")`,
+        [culumns],
+        (err, rows) => {
+          console.log("실행한 sql : ", executeSql.sql);
+          connection.release();
+          if (err) return reject(err);
+          if (rows.affectedRows > 0) return resolve(rows);
+          resolve(null);
         }
-        if (rows.affectedRows > 0) {
-          console.log("성공");
-          callback(null, rows);
-        } else {
-          console.log("찾지못함");
-          callback(null, null);
-        }
-      }
-    );
+      );
+    });
   });
 };
 
