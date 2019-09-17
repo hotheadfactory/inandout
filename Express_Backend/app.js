@@ -267,58 +267,39 @@ const reservationOfHolyday = function(date, memberid, username, resInTime, resOu
   });
 };
 
-app.post("/process/reservation/out", function(req, res) {
+app.post("/process/reservation/out", async function(req, res) {
   let paramMemberId = req.body.memberid;
   let paramDate = req.body.date;
-  if (pool) {
-    outRoom(paramMemberId, paramDate, function(err, result) {
-      if (err) {
-        console.log("errer", err);
-        res.send({
-          code: 400,
-          success: false
-        });
-      } else {
-        console.log("errer", result);
-        res.send({
-          code: 200,
-          success: true
-        });
-      }
-    });
+  if (!pool) res.status(500).send({ status: 500, message: "데이터베이스에 문제가 있습니다." });
+  try {
+    const result = await outRoom(paramDate, paramMemberId);
+    if (!result) throw new Error("퇴실가능한 예약이 존재하지 않습니다.");
+    res.status(200).send({ status: 200, message: "success" });
+  } catch (e) {
+    res.status(400).send({ status: 400, message: e.message });
   }
 });
 
-const outRoom = function(memberid, organizationId, callback) {
-  pool.getConnection(function(err, conn) {
-    if (err) {
-      if (conn) {
-        conn.release();
+const outRoom = function(date, memberid) {
+  return new Promise((resolve, reject) => {
+    pool.getConnection((err, connection) => {
+      if (err) {
+        if (connection) connection.release();
+        return reject(err);
       }
-      callback(err, null);
-      return;
-    }
-    console.log("데이어베이스 연결 스레드 아이디 : " + conn.threadId);
-    const tablename = "reservation";
-    let exec = conn.query(
-      `update ${tablename} set isout = 1 where isout=0 and memberid= ? and organizationId = ?`,
-      [memberid, organizationId],
-      function(err, rows) {
-        conn.release();
-        console.log("실행된 SQL : " + exec.sql);
-        if (err) {
-          callback(err, null);
-          return;
+      console.log("데이어베이스 연결 스레드 아이디 : ", connection.threadId);
+      const tablename = "reservation";
+      let executeSql = connection.query(
+        `update ${tablename} set isout = 1 where isout=0 and memberid=? and resday=?`,
+        [memberid, date],
+        (err, rows) => {
+          console.log("실행한 sql : ", executeSql.sql);
+          if (err) return reject(err);
+          if (rows.affectedRows > 0) return resolve(rows);
+          resolve(null);
         }
-        if (rows.affectedRows > 0) {
-          console.log("성공");
-          callback(null, rows);
-        } else {
-          console.log("찾지못함");
-          callback(null, null);
-        }
-      }
-    );
+      );
+    });
   });
 };
 
