@@ -1,10 +1,11 @@
-var express = require("express");
-var path = (path = require("path"));
-var bodyParser = require("body-parser");
-var mysql = require("mysql");
-var jwt = require("jsonwebtoken");
+const express = require("express");
+const path = (path = require("path"));
+const bodyParser = require("body-parser");
+const mysql = require("mysql");
+const jwt = require("jsonwebtoken");
+const SECRET_KEY = require("./config/secret");
 
-var pool = mysql.createPool({
+const pool = mysql.createPool({
   connectionLimit: 10,
   host: "168.131.35.102",
   user: "innout",
@@ -12,7 +13,7 @@ var pool = mysql.createPool({
   database: "innoutdb",
   debug: false
 });
-var app = express();
+const app = express();
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -24,8 +25,7 @@ app.use(function(req, res, next) {
 });
 
 //로그인
-var successTrue = function(data) {
-  //
+const successTrue = function(data) {
   return {
     success: true,
     message: null,
@@ -34,7 +34,7 @@ var successTrue = function(data) {
   };
 };
 
-var successFalse = function(err, message) {
+const successFalse = function(err, message) {
   if (!err && !message) message = "data not found";
   return {
     success: false,
@@ -43,79 +43,55 @@ var successFalse = function(err, message) {
     data: null
   };
 };
-app.post("/process/login", function(req, res) {
-  console.log("/process/login 호출됨.");
-  console.log(req.body);
-  var paramId = req.body["id"];
-  var paramPassword = req.body["password"];
-  var paramType = req.body["type"];
 
-  if (pool) {
-    authUser(paramId, paramPassword, paramType, function(err, rows) {
-      if (err) {
-        throw err;
-      }
-
-      if (rows) {
-        var id = rows[0][`${paramType}id`];
-        console.dir(rows);
-        var payload = {
-          id: id,
-          username: rows[0].username
-        };
-        var secretOrPrivateKey = "innout";
-        jwt.sign(payload, secretOrPrivateKey, function(err, token) {
-          if (err) return res.json(successFalse(err));
-          res.json(successTrue(token));
-          res.end();
-        });
-      }
+app.post("/process/login", async function(req, res) {
+  const paramId = req.body["id"];
+  const paramPassword = req.body["password"];
+  const paramType = req.body["type"];
+  if (!pool)
+    res.status(500).send({ status: 500, message: "데이터베이스에 연결되어 있지 않습니다." });
+  try {
+    const rows = await authUser(paramId, paramPassword, paramType);
+    if (!rows) throw new Error("사용자가 존재하지 않습니다.");
+    const payload = {
+      id: rows[0][`${paramType}id`],
+      username: rows[0].username
+    };
+    jwt.sign(payload, SECRET_KEY.jwt, { expiresIn: 86400 }, (err, token) => {
+      if (err) res.status(200).json(successFalse(err));
+      res.status(200).json(successTrue(token));
     });
-  } else {
-    res.writeHead("500");
-    res.end();
+  } catch (e) {
+    res.status(500).send({ status: 500, message: "데이터베이스 에러" });
   }
 });
-// 로그인 처리 함수
-var authUser = function(id, password, type, callback) {
-  pool.getConnection(function(err, conn) {
-    if (err) {
-      if (conn) {
-        conn.release();
-      }
-      callback(err, null);
-      return;
-    }
-    console.log("데이어베이스 연결 스레드 아이디 : " + conn.threadId);
-    var tablename = type;
-    var culumns = [`${type}id`, "username"];
-    var exec = conn.query(
-      `select ?? from ?? where ${type}id = ? and pin = ?`,
-      [culumns, tablename, id, password],
-      function(err, rows) {
-        conn.release();
-        console.log("실행된 SQL : " + exec.sql);
-        if (err) {
-          callback(err, null);
-          return;
-        }
-        if (rows.length > 0) {
-          console.log("사용자 찾음..");
-          callback(null, rows);
-        } else {
-          console.log("사용자 찾지못함");
-          callback(null, null);
-        }
-      }
-    );
-    conn.on("error", function(err) {
-      console.log("데이터베이스 연결 시 에러 발생함.");
-      console.dir(err);
 
-      callback(err, null);
+// 로그인 처리 함수
+const authUser = function(id, password, type) {
+  return new Promise((resolve, reject) => {
+    pool.getConnection((err, connection) => {
+      if (err) {
+        if (connection) connection.release();
+        reject(err);
+      }
+      console.log("데이어베이스 연결 스레드 아이디 : " + connection.threadId);
+      const tableName = type;
+      const culumns = [`${type}id`, "username"];
+      const executeSql = connection.query(
+        `select ?? from ?? where ${type}id = ? and pin = ?`,
+        [culumns, tableName, id, password],
+        (err, rows) => {
+          console.log(`실행한 sql : ${executeSql.sql}`);
+          connection.release();
+          if (err) reject(err);
+          if (rows.length > 0) resolve(rows);
+          resolve(null);
+        }
+      );
     });
   });
 };
+
 //member 가입
 app.post("/process/join/member", function(req, res) {
   let paramId = req.body.memberid;
@@ -181,6 +157,54 @@ const joinUser = function(id, pin, name, callback) {
   });
 };
 
+app.post("/card/reservation", async function(req, res) {
+  let paramDate = req.body.date;
+  let paramCard = req.body.card;
+  let paramMemberid = await findUserByCard(paramCard);
+});
+const findUserData = memberid => {
+  return new Promise((resolve, reject) => {
+    pool.getConnection((err, conn) => {
+      if (err) {
+        if (conn) conn.release();
+        reject(err);
+      }
+      const tablename = "member";
+      const culums = ["organizationId", "organizationName"];
+      const exec = conn.query(``);
+    });
+  });
+};
+const findUserByCard = card => {
+  return new Promise((resolve, reject) => {
+    pool.getConnection((err, conn) => {
+      if (err) {
+        if (conn) {
+          conn.release();
+        }
+        reject(err);
+      }
+      console.log("데이어베이스 연결 스레드 아이디 : " + conn.threadId);
+      const tablename = "card";
+      const culumns = ["memberid"];
+      let exec = conn.query(`select (??) from ${tablename} where ${card}`, [culumns], function(
+        err,
+        rows
+      ) {
+        conn.release();
+        console.log("실행된 SQL : " + exec.sql);
+        if (err) reject(err);
+        if (rows.affectedRows > 0) {
+          console.log("성공");
+          resolve(rows);
+        }
+        console.log("찾지못함");
+        reject(null);
+      });
+    });
+  });
+};
+
 app.post("/process/reservation", function(req, res) {
   let paramDate = req.body.date;
   let paramMemberId = req.body.memberid;
@@ -188,39 +212,28 @@ app.post("/process/reservation", function(req, res) {
   let paramORID = req.body.organizationId;
   let paramORNAME = req.body.organizationName;
   if (pool) {
-    reservation(
-      paramDate,
-      paramMemberId,
-      paramUsername,
-      paramORID,
-      paramORNAME,
-      function(err, result) {
-        if (err) {
-          console.log("errer", err);
-          res.send({
-            code: 400,
-            success: false
-          });
-        } else {
-          console.log("errer", result);
-          res.send({
-            code: 200,
-            success: true
-          });
-        }
+    reservation(paramDate, paramMemberId, paramUsername, paramORID, paramORNAME, function(
+      err,
+      result
+    ) {
+      if (err) {
+        console.log("errer", err);
+        res.send({
+          code: 400,
+          success: false
+        });
+      } else {
+        console.log("errer", result);
+        res.send({
+          code: 200,
+          success: true
+        });
       }
-    );
+    });
   }
 });
 
-const reservation = function(
-  date,
-  memberid,
-  username,
-  organizationId,
-  organizationName,
-  callback
-) {
+const reservation = function(date, memberid, username, organizationId, organizationName, callback) {
   pool.getConnection(function(err, conn) {
     if (err) {
       if (conn) {
@@ -231,13 +244,7 @@ const reservation = function(
     }
     console.log("데이어베이스 연결 스레드 아이디 : " + conn.threadId);
     const tablename = "reservation";
-    const culumns = [
-      "memberid",
-      "username",
-      "organizationId",
-      "organizationName",
-      "intime"
-    ];
+    const culumns = ["memberid", "username", "organizationId", "organizationName", "intime"];
     let exec = conn.query(
       `insert into ${tablename}(??) values("${memberid}","${username}",${organizationId},"${organizationName}",DATE "${date}")`,
       [culumns],
