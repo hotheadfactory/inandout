@@ -1,5 +1,5 @@
 const express = require("express");
-const path = (path = require("path"));
+const path = require("path");
 const bodyParser = require("body-parser");
 const mysql = require("mysql");
 const jwt = require("jsonwebtoken");
@@ -62,7 +62,7 @@ app.post("/process/login", async function(req, res) {
       res.status(200).json(successTrue(token));
     });
   } catch (e) {
-    res.status(500).send({ status: 500, message: "데이터베이스 에러" });
+    res.status(500).send({ status: 500, message: e.message });
   }
 });
 
@@ -72,9 +72,9 @@ const authUser = function(id, password, type) {
     pool.getConnection((err, connection) => {
       if (err) {
         if (connection) connection.release();
-        reject(err);
+        return reject(err);
       }
-      console.log("데이어베이스 연결 스레드 아이디 : " + connection.threadId);
+      console.log("데이어베이스 연결 스레드 아이디 : ", connection.threadId);
       const tableName = type;
       const culumns = [`${type}id`, "username"];
       const executeSql = connection.query(
@@ -83,8 +83,8 @@ const authUser = function(id, password, type) {
         (err, rows) => {
           console.log(`실행한 sql : ${executeSql.sql}`);
           connection.release();
-          if (err) reject(err);
-          if (rows.length > 0) resolve(rows);
+          if (err) return reject(err);
+          if (rows.length > 0) return resolve(rows);
           resolve(null);
         }
       );
@@ -93,66 +93,40 @@ const authUser = function(id, password, type) {
 };
 
 //member 가입
-app.post("/process/join/member", function(req, res) {
+app.post("/process/join/member", async function(req, res) {
   let paramId = req.body.memberid;
   let parampin = req.body.pin;
   let paramName = req.body.username;
-  if (pool) {
-    joinUser(paramId, parampin, paramName, function(err, result) {
-      if (err) {
-        console.log("errer", err);
-        res.send({
-          code: 400,
-          success: false
-        });
-      } else {
-        console.log("errer", result);
-        res.send({
-          code: 200,
-          success: true
-        });
-      }
-    });
+  if (!pool)
+    res.status(500).send({ status: 500, message: "데이터베이스에 연결되어 있지 않습니다." });
+  try {
+    const result = await joinUser(paramId, parampin, paramName);
+    res.status(200).send({ status: 200, message: "success" });
+  } catch (e) {
+    res.status(400).send({ status: 400, message: e.message });
   }
 });
 
-const joinUser = function(id, pin, name, callback) {
-  pool.getConnection(function(err, conn) {
-    if (err) {
-      if (conn) {
-        conn.release();
+const joinUser = function(id, pin, name) {
+  return new Promise((resolve, reject) => {
+    pool.getConnection((err, connection) => {
+      if (err) {
+        if (connection) connection.release();
+        return reject(err);
       }
-      callback(err, null);
-      return;
-    }
-    console.log("데이어베이스 연결 스레드 아이디 : " + conn.threadId);
-    const tablename = "member";
-    const culumns = ["memberid", "pin", "username"];
-    var exec = conn.query(
-      `insert into ${tablename}(??) values("${id}","${pin}","${name}")`,
-      [culumns],
-      function(err, rows) {
-        console.log(rows);
-        conn.release();
-        console.log("실행된 SQL : " + exec.sql);
-        if (err) {
-          callback(err, null);
-          return;
+      console.log("데이어베이스 연결 스레드 아이디 : ", connection.threadId);
+      const tableName = "member";
+      const culumns = ["memberid", "pin", "username"];
+      const executeSql = connection.query(
+        `insert into ${tableName}(??) values("${id}","${pin}","${name}")`,
+        [culumns],
+        (err, rows) => {
+          console.log("실행된 sql : ", executeSql.sql);
+          connection.release();
+          if (err) return reject(err);
+          if (rows.affectedRows > 0) return resolve(rows.affectedRows);
         }
-        if (rows.affectedRows > 0) {
-          console.log("성공");
-          callback(null, rows);
-        } else {
-          console.log("사용자 찾지못함");
-          callback(null, null);
-        }
-      }
-    );
-    conn.on("error", function(err) {
-      console.log("데이터베이스 연결 시 에러 발생함.");
-      console.dir(err);
-
-      callback(err, null);
+      );
     });
   });
 };
