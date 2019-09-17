@@ -219,6 +219,53 @@ const reservationOfDay = function(date, memberid, username) {
     });
   });
 };
+app.post("/process/reservation/holyday", async function(req, res) {
+  let paramDate = req.body.date;
+  let paramMemberId = req.body.memberid;
+  let paramUsername = req.body.username;
+  let paramResInTime = req.body.resintime;
+  let paramResOutTime = req.body.resouttime;
+  if (!pool)
+    res.status(500).send({ status: 500, message: "데이터베이스에 연결되어 있지 않습니다." });
+  try {
+    const result = await reservationOfHolyday(
+      paramDate,
+      paramMemberId,
+      paramUsername,
+      paramResInTime,
+      paramResOutTime
+    );
+    if (!result) throw new Error("이미 예약이 되어있습니다.");
+    res.status(200).send({ status: 200, message: "success" });
+  } catch (e) {
+    res.status(400).send({ status: 400, message: e.message });
+  }
+});
+
+const reservationOfHolyday = function(date, memberid, username, resInTime, resOutTime) {
+  return new Promise((resolve, reject) => {
+    pool.getConnection(function(err, connection) {
+      if (err) {
+        if (conn) connection.release();
+        return reject(err);
+      }
+      console.log("데이어베이스 연결 스레드 아이디 : ", connection.threadId);
+      const tablename = "reservation";
+      const culumns = ["memberid", "username", "resday", "resintime", "resouttime"];
+      const executeSql = connection.query(
+        `insert into ${tablename}(??) values("${memberid}","${username}","${date}","${resInTime}","${resOutTime}")`,
+        [culumns],
+        (err, rows) => {
+          console.log("실행한 sql : ", executeSql.sql);
+          connection.release();
+          if (err) return reject(err);
+          if (rows.affectedRows > 0) return resolve(rows);
+          resolve(null);
+        }
+      );
+    });
+  });
+};
 
 app.post("/process/reservation/out", function(req, res) {
   let paramMemberId = req.body.memberid;
