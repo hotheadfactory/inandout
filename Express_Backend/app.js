@@ -132,50 +132,40 @@ const joinUser = function(id, pin, name) {
   });
 };
 
-app.post("/card/reservation", async function(req, res) {
-  let paramDate = req.body.date;
-  let paramCard = req.body.card;
-  let paramMemberid = await findUserByCard(paramCard);
+app.post("/process/card/register", async function(req, res) {
+  let paramMemberId = req.body.memberid;
+  let paramCardNumber = req.body.cardnumber;
+  if (!pool)
+    res.status(500).send({ status: 500, message: "데이터베이스에 연결되어 있지 않습니다." });
+  try {
+    const result = await registCard(paramMemberId, paramCardNumber);
+    if (!result) throw new Error("이미 등록된 카드입니다.");
+    res.status(200).send({ status: 200, message: "success" });
+  } catch (e) {
+    res.status(400).send({ status: 400, message: e.message });
+  }
 });
-const findUserData = memberid => {
+
+const registCard = function(memberid, cardnumber) {
   return new Promise((resolve, reject) => {
-    pool.getConnection((err, conn) => {
+    pool.getConnection((err, connection) => {
       if (err) {
-        if (conn) conn.release();
-        reject(err);
+        if (connection) connection.release();
+        return reject(err);
       }
-      const tablename = "member";
-      const culums = ["organizationId", "organizationName"];
-      const exec = conn.query(``);
-    });
-  });
-};
-const findUserByCard = card => {
-  return new Promise((resolve, reject) => {
-    pool.getConnection((err, conn) => {
-      if (err) {
-        if (conn) {
-          conn.release();
+      console.log("데이어베이스 연결 스레드 아이디 : ", connection.threadId);
+      const tableName = "card";
+      const culumns = ["memberid", "cardnumber"];
+      const executeSql = connection.query(
+        `insert into ${tableName}(??) values("${memberid}","${cardnumber}")`,
+        [culumns],
+        (err, rows) => {
+          console.log("실행된 sql : ", executeSql.sql);
+          if (err) return reject(err);
+          if (rows.affectedRows > 0) return resolve(rows);
+          resolve(null);
         }
-        reject(err);
-      }
-      console.log("데이어베이스 연결 스레드 아이디 : " + conn.threadId);
-      const tablename = "card";
-      const culumns = ["memberid"];
-      let exec = conn.query(`select (??) from ${tablename} where ${card}`, [culumns], function(
-        err,
-        rows
-      ) {
-        conn.release();
-        console.log("실행된 SQL : " + exec.sql);
-        if (err) reject(err);
-        if (rows.affectedRows > 0) {
-          console.log("성공");
-          resolve(rows);
-        }
-        console.log("찾지못함");
-        reject(null);
-      });
+      );
     });
   });
 };
