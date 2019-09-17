@@ -1,10 +1,11 @@
-var express = require("express");
-var path = (path = require("path"));
-var bodyParser = require("body-parser");
-var mysql = require("mysql");
-var jwt = require("jsonwebtoken");
+const express = require("express");
+const path = require("path");
+const bodyParser = require("body-parser");
+const mysql = require("mysql");
+const jwt = require("jsonwebtoken");
+const SECRET_KEY = require("./config/secret");
 
-var pool = mysql.createPool({
+const pool = mysql.createPool({
   connectionLimit: 10,
   host: "168.131.35.102",
   user: "innout",
@@ -12,7 +13,7 @@ var pool = mysql.createPool({
   database: "innoutdb",
   debug: false
 });
-var app = express();
+const app = express();
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -23,9 +24,17 @@ app.use(function(req, res, next) {
   next();
 });
 
+app.get("/token", function(req, res) {
+  const token = req.query.token;
+  if (!token) res.status(401).send("Unauthorized: No token provided");
+  jwt.verify(token, SECRET_KEY.jwt, function(err, decoded) {
+    if (err) res.status(401).send("Unauthorized: Invalid token");
+    res.status(200).send({ memberid: decoded.id, username: decoded.username });
+  });
+});
+
 //로그인
-var successTrue = function(data) {
-  //
+const successTrue = function(data) {
   return {
     success: true,
     message: null,
@@ -34,7 +43,7 @@ var successTrue = function(data) {
   };
 };
 
-var successFalse = function(err, message) {
+const successFalse = function(err, message) {
   if (!err && !message) message = "data not found";
   return {
     success: false,
@@ -43,275 +52,322 @@ var successFalse = function(err, message) {
     data: null
   };
 };
-app.post("/process/login", function(req, res) {
-  console.log("/process/login 호출됨.");
-  console.log(req.body);
-  var paramId = req.body["id"];
-  var paramPassword = req.body["password"];
-  var paramType = req.body["type"];
 
-  if (pool) {
-    authUser(paramId, paramPassword, paramType, function(err, rows) {
-      if (err) {
-        throw err;
-      }
-
-      if (rows) {
-        var id = rows[0][`${paramType}id`];
-        console.dir(rows);
-        var payload = {
-          id: id,
-          username: rows[0].username
-        };
-        var secretOrPrivateKey = "innout";
-        jwt.sign(payload, secretOrPrivateKey, function(err, token) {
-          if (err) return res.json(successFalse(err));
-          res.json(successTrue(token));
-          res.end();
-        });
-      }
+app.post("/process/login", async function(req, res) {
+  const paramId = req.body["id"];
+  const paramPassword = req.body["password"];
+  const paramType = req.body["type"];
+  if (!pool)
+    res.status(500).send({ status: 500, message: "데이터베이스에 연결되어 있지 않습니다." });
+  try {
+    const rows = await authUser(paramId, paramPassword, paramType);
+    if (!rows) throw new Error("사용자가 존재하지 않습니다.");
+    if (!rows[0]["asigned"]) throw new Error("아직 가입승인이 이루어지지 않았습니다.");
+    const payload = {
+      id: rows[0][`${paramType}id`],
+      username: rows[0].username
+    };
+    jwt.sign(payload, SECRET_KEY.jwt, { expiresIn: 86400 }, (err, token) => {
+      if (err) res.status(200).json(successFalse(err));
+      res.status(200).json(successTrue(token));
     });
-  } else {
-    res.writeHead("500");
-    res.end();
+  } catch (e) {
+    res.status(500).send({ status: 500, message: e.message });
   }
 });
-// 로그인 처리 함수
-var authUser = function(id, password, type, callback) {
-  pool.getConnection(function(err, conn) {
-    if (err) {
-      if (conn) {
-        conn.release();
-      }
-      callback(err, null);
-      return;
-    }
-    console.log("데이어베이스 연결 스레드 아이디 : " + conn.threadId);
-    var tablename = type;
-    var culumns = [`${type}id`, "username"];
-    var exec = conn.query(
-      `select ?? from ?? where ${type}id = ? and pin = ?`,
-      [culumns, tablename, id, password],
-      function(err, rows) {
-        conn.release();
-        console.log("실행된 SQL : " + exec.sql);
-        if (err) {
-          callback(err, null);
-          return;
-        }
-        if (rows.length > 0) {
-          console.log("사용자 찾음..");
-          callback(null, rows);
-        } else {
-          console.log("사용자 찾지못함");
-          callback(null, null);
-        }
-      }
-    );
-    conn.on("error", function(err) {
-      console.log("데이터베이스 연결 시 에러 발생함.");
-      console.dir(err);
 
-      callback(err, null);
+// 로그인 처리 함수
+const authUser = function(id, password, type) {
+  return new Promise((resolve, reject) => {
+    pool.getConnection((err, connection) => {
+      if (err) {
+        if (connection) connection.release();
+        return reject(err);
+      }
+      console.log("데이어베이스 연결 스레드 아이디 : ", connection.threadId);
+      const tableName = type;
+      const culumns = [`${type}id`, "username", "asigned"];
+      const executeSql = connection.query(
+        `select ?? from ?? where ${type}id = ? and pin = ?`,
+        [culumns, tableName, id, password],
+        (err, rows) => {
+          console.log(`실행한 sql : ${executeSql.sql}`);
+          connection.release();
+          if (err) return reject(err);
+          if (rows.length > 0) return resolve(rows);
+          resolve(null);
+        }
+      );
     });
   });
 };
+
 //member 가입
-app.post("/process/join/member", function(req, res) {
+app.post("/process/join/member", async function(req, res) {
   let paramId = req.body.memberid;
   let parampin = req.body.pin;
   let paramName = req.body.username;
-  if (pool) {
-    joinUser(paramId, parampin, paramName, function(err, result) {
-      if (err) {
-        console.log("errer", err);
-        res.send({
-          code: 400,
-          success: false
-        });
-      } else {
-        console.log("errer", result);
-        res.send({
-          code: 200,
-          success: true
-        });
-      }
-    });
+  if (!pool)
+    res.status(500).send({ status: 500, message: "데이터베이스에 연결되어 있지 않습니다." });
+  try {
+    const result = await joinUser(paramId, parampin, paramName);
+    res.status(200).send({ status: 200, message: "success" });
+  } catch (e) {
+    res.status(400).send({ status: 400, message: e.message });
   }
 });
 
-const joinUser = function(id, pin, name, callback) {
-  pool.getConnection(function(err, conn) {
-    if (err) {
-      if (conn) {
-        conn.release();
+const joinUser = function(id, pin, name) {
+  return new Promise((resolve, reject) => {
+    pool.getConnection((err, connection) => {
+      if (err) {
+        if (connection) connection.release();
+        return reject(err);
       }
-      callback(err, null);
-      return;
-    }
-    console.log("데이어베이스 연결 스레드 아이디 : " + conn.threadId);
-    const tablename = "member";
-    const culumns = ["memberid", "pin", "username"];
-    var exec = conn.query(
-      `insert into ${tablename}(??) values("${id}","${pin}","${name}")`,
-      [culumns],
-      function(err, rows) {
-        console.log(rows);
-        conn.release();
-        console.log("실행된 SQL : " + exec.sql);
-        if (err) {
-          callback(err, null);
-          return;
+      console.log("데이어베이스 연결 스레드 아이디 : ", connection.threadId);
+      const tableName = "member";
+      const culumns = ["memberid", "pin", "username"];
+      const executeSql = connection.query(
+        `insert into ${tableName}(??) values("${id}","${pin}","${name}")`,
+        [culumns],
+        (err, rows) => {
+          console.log("실행된 sql : ", executeSql.sql);
+          connection.release();
+          if (err) return reject(err);
+          if (rows.affectedRows > 0) return resolve(rows.affectedRows);
         }
-        if (rows.affectedRows > 0) {
-          console.log("성공");
-          callback(null, rows);
-        } else {
-          console.log("사용자 찾지못함");
-          callback(null, null);
-        }
-      }
-    );
-    conn.on("error", function(err) {
-      console.log("데이터베이스 연결 시 에러 발생함.");
-      console.dir(err);
-
-      callback(err, null);
+      );
     });
   });
 };
 
-app.post("/process/reservation", function(req, res) {
+app.post("/process/card/login", async function(req, res) {
+  let paramCardNumber = req.body.cardnumber;
+  if (!pool)
+    res.status(500).send({ status: 500, message: "데이터베이스에 연결되어 있지 않습니다." });
+  try {
+    const result1 = await findMemberid(paramCardNumber);
+    if (!result1) throw new Error("등록되지 않은 카드입니다.");
+    const memberid = result1[0]["memberid"];
+    const result2 = await findUsername(memberid);
+    if (!result2) throw new Error("일치하는 회원정보가 존재하지 않습니다.");
+    if (!result2[0]["asigned"]) throw new Error("아직 승인되지 않은 회원입니다.");
+    const username = result2[0]["username"];
+    const payload = {
+      id: memberid,
+      username: username
+    };
+    jwt.sign(payload, SECRET_KEY.jwt, { expiresIn: 86400 }, (err, token) => {
+      if (err) res.status(200).json(successFalse(err));
+      res.status(200).json(successTrue(token));
+    });
+  } catch (e) {
+    res.status(400).send({ status: 400, message: e.message });
+  }
+});
+
+const findMemberid = function(cardnumber) {
+  return new Promise((resolve, reject) => {
+    pool.getConnection((err, connection) => {
+      if (err) {
+        if (connection) connection.release();
+        return reject(err);
+      }
+      console.log("데이어베이스 연결 스레드 아이디 : ", connection.threadId);
+      const tableName = "card";
+      const executeSql = connection.query(
+        `select memberid from ${tableName} where cardnumber="${cardnumber}"`,
+        (err, rows) => {
+          console.log("실행된 sql : ", executeSql.sql);
+          if (err) return reject(err);
+          if (rows.length > 0) return resolve(rows);
+          resolve(null);
+        }
+      );
+    });
+  });
+};
+
+const findUsername = function(memberid) {
+  return new Promise((resolve, reject) => {
+    pool.getConnection((err, connection) => {
+      if (err) {
+        if (connection) connection.release();
+        return reject(err);
+      }
+      console.log("데이어베이스 연결 스레드 아이디 : ", connection.threadId);
+      const tableName = "member";
+      const executeSql = connection.query(
+        `select username, asigned from ${tableName} where memberid="${memberid}"`,
+        (err, rows) => {
+          console.log("실행된 sql : ", executeSql.sql);
+          if (err) return reject(err);
+          if (rows.length > 0) return resolve(rows);
+          resolve(null);
+        }
+      );
+    });
+  });
+};
+
+app.post("/process/card/register", async function(req, res) {
+  let paramMemberId = req.body.memberid;
+  let paramCardNumber = req.body.cardnumber;
+  if (!pool)
+    res.status(500).send({ status: 500, message: "데이터베이스에 연결되어 있지 않습니다." });
+  try {
+    const result = await registCard(paramMemberId, paramCardNumber);
+    if (!result) throw new Error("이미 등록된 카드입니다.");
+    res.status(200).send({ status: 200, message: "success" });
+  } catch (e) {
+    res.status(400).send({ status: 400, message: e.message });
+  }
+});
+
+const registCard = function(memberid, cardnumber) {
+  return new Promise((resolve, reject) => {
+    pool.getConnection((err, connection) => {
+      if (err) {
+        if (connection) connection.release();
+        return reject(err);
+      }
+      console.log("데이어베이스 연결 스레드 아이디 : ", connection.threadId);
+      const tableName = "card";
+      const culumns = ["memberid", "cardnumber"];
+      const executeSql = connection.query(
+        `insert into ${tableName}(??) values("${memberid}","${cardnumber}")`,
+        [culumns],
+        (err, rows) => {
+          console.log("실행된 sql : ", executeSql.sql);
+          if (err) return reject(err);
+          if (rows.affectedRows > 0) return resolve(rows);
+          resolve(null);
+        }
+      );
+    });
+  });
+};
+
+app.post("/process/reservation/day", async function(req, res) {
   let paramDate = req.body.date;
   let paramMemberId = req.body.memberid;
   let paramUsername = req.body.username;
-  let paramORID = req.body.organizationId;
-  let paramORNAME = req.body.organizationName;
-  if (pool) {
-    reservation(
+  if (!pool)
+    res.status(500).send({ status: 500, message: "데이터베이스에 연결되어 있지 않습니다." });
+  try {
+    const result = await reservationOfDay(paramDate, paramMemberId, paramUsername);
+    if (!result) throw new Error("이미 예약이 되어있습니다.");
+    res.status(200).send({ status: 200, message: "success" });
+  } catch (e) {
+    res.status(400).send({ status: 400, message: e.message });
+  }
+});
+
+const reservationOfDay = function(date, memberid, username) {
+  return new Promise((resolve, reject) => {
+    pool.getConnection(function(err, connection) {
+      if (err) {
+        if (conn) connection.release();
+        return reject(err);
+      }
+      console.log("데이어베이스 연결 스레드 아이디 : ", connection.threadId);
+      const tablename = "reservation";
+      const culumns = ["memberid", "username", "resday", "resintime"];
+      const executeSql = connection.query(
+        `insert into ${tablename}(??) values("${memberid}","${username}","${date}","${date} 20:00:00")`,
+        [culumns],
+        (err, rows) => {
+          console.log("실행한 sql : ", executeSql.sql);
+          connection.release();
+          if (err) return reject(err);
+          if (rows.affectedRows > 0) return resolve(rows);
+          resolve(null);
+        }
+      );
+    });
+  });
+};
+app.post("/process/reservation/holyday", async function(req, res) {
+  let paramDate = req.body.date;
+  let paramMemberId = req.body.memberid;
+  let paramUsername = req.body.username;
+  let paramResInTime = req.body.resintime;
+  let paramResOutTime = req.body.resouttime;
+  if (!pool)
+    res.status(500).send({ status: 500, message: "데이터베이스에 연결되어 있지 않습니다." });
+  try {
+    const result = await reservationOfHolyday(
       paramDate,
       paramMemberId,
       paramUsername,
-      paramORID,
-      paramORNAME,
-      function(err, result) {
-        if (err) {
-          console.log("errer", err);
-          res.send({
-            code: 400,
-            success: false
-          });
-        } else {
-          console.log("errer", result);
-          res.send({
-            code: 200,
-            success: true
-          });
-        }
-      }
+      paramResInTime,
+      paramResOutTime
     );
+    if (!result) throw new Error("이미 예약이 되어있습니다.");
+    res.status(200).send({ status: 200, message: "success" });
+  } catch (e) {
+    res.status(400).send({ status: 400, message: e.message });
   }
 });
 
-const reservation = function(
-  date,
-  memberid,
-  username,
-  organizationId,
-  organizationName,
-  callback
-) {
-  pool.getConnection(function(err, conn) {
-    if (err) {
-      if (conn) {
-        conn.release();
+const reservationOfHolyday = function(date, memberid, username, resInTime, resOutTime) {
+  return new Promise((resolve, reject) => {
+    pool.getConnection(function(err, connection) {
+      if (err) {
+        if (conn) connection.release();
+        return reject(err);
       }
-      callback(err, null);
-      return;
-    }
-    console.log("데이어베이스 연결 스레드 아이디 : " + conn.threadId);
-    const tablename = "reservation";
-    const culumns = [
-      "memberid",
-      "username",
-      "organizationId",
-      "organizationName",
-      "intime"
-    ];
-    let exec = conn.query(
-      `insert into ${tablename}(??) values("${memberid}","${username}",${organizationId},"${organizationName}",DATE "${date}")`,
-      [culumns],
-      function(err, rows) {
-        conn.release();
-        console.log("실행된 SQL : " + exec.sql);
-        if (err) {
-          callback(err, null);
-          return;
+      console.log("데이어베이스 연결 스레드 아이디 : ", connection.threadId);
+      const tablename = "reservation";
+      const culumns = ["memberid", "username", "resday", "resintime", "resouttime"];
+      const executeSql = connection.query(
+        `insert into ${tablename}(??) values("${memberid}","${username}","${date}","${resInTime}","${resOutTime}")`,
+        [culumns],
+        (err, rows) => {
+          console.log("실행한 sql : ", executeSql.sql);
+          connection.release();
+          if (err) return reject(err);
+          if (rows.affectedRows > 0) return resolve(rows);
+          resolve(null);
         }
-        if (rows.affectedRows > 0) {
-          console.log("성공");
-          callback(null, rows);
-        } else {
-          console.log("찾지못함");
-          callback(null, null);
-        }
-      }
-    );
+      );
+    });
   });
 };
 
-app.post("/process/reservation/out", function(req, res) {
+app.post("/process/reservation/out", async function(req, res) {
   let paramMemberId = req.body.memberid;
-  let paramOrganizationId = req.body.organizationId;
-  if (pool) {
-    outRoom(paramMemberId, paramOrganizationId, function(err, result) {
-      if (err) {
-        console.log("errer", err);
-        res.send({
-          code: 400,
-          success: false
-        });
-      } else {
-        console.log("errer", result);
-        res.send({
-          code: 200,
-          success: true
-        });
-      }
-    });
+  let paramDate = req.body.date;
+  if (!pool) res.status(500).send({ status: 500, message: "데이터베이스에 문제가 있습니다." });
+  try {
+    const result = await outRoom(paramDate, paramMemberId);
+    if (!result) throw new Error("퇴실가능한 예약이 존재하지 않습니다.");
+    res.status(200).send({ status: 200, message: "success" });
+  } catch (e) {
+    res.status(400).send({ status: 400, message: e.message });
   }
 });
 
-const outRoom = function(memberid, organizationId, callback) {
-  pool.getConnection(function(err, conn) {
-    if (err) {
-      if (conn) {
-        conn.release();
+const outRoom = function(date, memberid) {
+  return new Promise((resolve, reject) => {
+    pool.getConnection((err, connection) => {
+      if (err) {
+        if (connection) connection.release();
+        return reject(err);
       }
-      callback(err, null);
-      return;
-    }
-    console.log("데이어베이스 연결 스레드 아이디 : " + conn.threadId);
-    const tablename = "reservation";
-    let exec = conn.query(
-      `update ${tablename} set isout = 1 where isout=0 and memberid= ? and organizationId = ?`,
-      [memberid, organizationId],
-      function(err, rows) {
-        conn.release();
-        console.log("실행된 SQL : " + exec.sql);
-        if (err) {
-          callback(err, null);
-          return;
+      console.log("데이어베이스 연결 스레드 아이디 : ", connection.threadId);
+      const tablename = "reservation";
+      let executeSql = connection.query(
+        `update ${tablename} set isout = 1 where isout=0 and memberid=? and resday=?`,
+        [memberid, date],
+        (err, rows) => {
+          console.log("실행한 sql : ", executeSql.sql);
+          if (err) return reject(err);
+          if (rows.affectedRows > 0) return resolve(rows);
+          resolve(null);
         }
-        if (rows.affectedRows > 0) {
-          console.log("성공");
-          callback(null, rows);
-        } else {
-          console.log("찾지못함");
-          callback(null, null);
-        }
-      }
-    );
+      );
+    });
   });
 };
 
