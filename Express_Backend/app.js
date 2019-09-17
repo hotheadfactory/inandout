@@ -53,6 +53,7 @@ app.post("/process/login", async function(req, res) {
   try {
     const rows = await authUser(paramId, paramPassword, paramType);
     if (!rows) throw new Error("사용자가 존재하지 않습니다.");
+    if (!rows[0]["asigned"]) throw new Error("아직 가입승인이 이루어지지 않았습니다.");
     const payload = {
       id: rows[0][`${paramType}id`],
       username: rows[0].username
@@ -221,9 +222,9 @@ const reservationOfDay = function(date, memberid, username) {
 
 app.post("/process/reservation/out", function(req, res) {
   let paramMemberId = req.body.memberid;
-  let paramOrganizationId = req.body.organizationId;
+  let paramDate = req.body.date;
   if (pool) {
-    outRoom(paramMemberId, paramOrganizationId, function(err, result) {
+    outRoom(paramMemberId, paramDate, function(err, result) {
       if (err) {
         console.log("errer", err);
         res.send({
