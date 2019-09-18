@@ -179,6 +179,7 @@ const findMemberid = function(cardnumber) {
         `select memberid from ${tableName} where cardnumber="${cardnumber}"`,
         (err, rows) => {
           console.log("실행된 sql : ", executeSql.sql);
+          connection.release();
           if (err) return reject(err);
           if (rows.length > 0) return resolve(rows);
           resolve(null);
@@ -201,6 +202,7 @@ const findUsername = function(memberid) {
         `select username, asigned from ${tableName} where memberid="${memberid}"`,
         (err, rows) => {
           console.log("실행된 sql : ", executeSql.sql);
+          connection.release();
           if (err) return reject(err);
           if (rows.length > 0) return resolve(rows);
           resolve(null);
@@ -239,6 +241,7 @@ const registCard = function(memberid, cardnumber) {
         [culumns],
         (err, rows) => {
           console.log("실행된 sql : ", executeSql.sql);
+          connection.release();
           if (err) return reject(err);
           if (rows.affectedRows > 0) return resolve(rows);
           resolve(null);
@@ -362,6 +365,7 @@ const outRoom = function(date, memberid) {
         [memberid, date],
         (err, rows) => {
           console.log("실행한 sql : ", executeSql.sql);
+          connection.release();
           if (err) return reject(err);
           if (rows.affectedRows > 0) return resolve(rows);
           resolve(null);
