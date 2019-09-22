@@ -1,32 +1,176 @@
-<!DOCTYPE HTML>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>INANDOUT CLIENT v0.0.1</title>
-    <link href="https://fonts.googleapis.com/css?family=Noto+Sans+KR&display=swap" rel="stylesheet">
-    <script language="javaScript">
-	function auto_close() {
-	    setTimeout(function() {
-		self.close();
-	    }, 2000);
-	}
-    </script>
+<title>아작스 전송 테스트</title>
+<script src="http://code.jquery.com/jquery-1.10.2.js"></script>
+<script type="text/javascript">
+
+function appLogin(url) {
+    let id = document.getElementById('user_id').value
+    let password = document.getElementById('user_pw').value
+  $.post(url, { id: id, password: password, type: "member" }, 'json')
+  .done(function(jqXHR) {
+    alert("로그인 되었습니다." );
+    document.getElementById('token').value = jqXHR.data;
+    useToken('http://in.econovation.kr:3000/token',jqXHR.data);
+    console.log(jqXHR);
+  })
+  .fail(function(jqXHR) {
+    alert("로그인에 실패했습니다." );
+    console.log(jqXHR.message);
+  });
+}
+
+function cardLogin(url){
+    let cardno = document.getElementById('login_card_no').value;
+    $.post(url, { cardnumber : cardno }, 'json')
+    .done(function(jqXHR) {
+      console.log(jqXHR);
+	    alert("인증 성공! 토큰: "+jqXHR.data);
+      document.getElementById('token').value = jqXHR.data;
+      useToken('http://in.econovation.kr:3000/token',jqXHR.data);
+    })
+    .fail(function(jqXHR) {
+      console.log(jqXHR);                                                                                                                                                                                                                                                                                                                                                                        
+    	alert("인증 실패! ");
+    });
+}
+
+function cardRegister(url){
+  let id = document.getElementById('user_id').value;
+  let cardno = document.getElementById('login_card_no').value;
+  // 입력값을 변수에 담고 문자열 형태로 변환
+  var data = {'memberid' : id, 'cardnumber' : cardno};
+  console.log(data);
+  data = JSON.stringify(data);
+
+  // content-type을 설정하고 데이터 송신
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', url);
+  xhr.setRequestHeader('Content-type', "application/json");
+  xhr.send(data);
+  
+  // 데이터 수신이 완료되면 표시
+  xhr.addEventListener('load', function(){
+    let response = JSON.parse(xhr.responseText);
+    let message = "";
+    if(response.success) {
+	alert("등록되었습니다");
+    } else {
+    	alert("인증 실패!");
+    }
+    console.log(xhr.responseText);
+  });
+}
+
+/*function useToken(url,token) {
+var data = {'token' : token};
+var xhr = new XMLHttpRequest();
+  xhr.open('GET', url+'?token='+token);
+  xhr.send(data);
+  // 데이터 수신이 완료되면 표시
+  xhr.addEventListener('load', function(){
+    console.log(xhr.responseText);
+    let userinfo = JSON.parse(xhr.responseText);
+    document.getElementById('user_id').value = userinfo.memberid;
+    document.getElementById('user_name').value = userinfo.username;
+  });
+}*/
+//이랬던 코드가...
+
+function useToken(url,logintoken) {
+  $.get(url, { token: logintoken }, 'json')
+  .done(function(jqXHR) {
+    console.log(jqXHR);
+    //jqXHR은 이미 파싱된 json 객체!
+    document.getElementById('user_id').value = jqXHR.memberid;
+    document.getElementById('user_name').value = jqXHR.username;
+  });
+}
+//제이쿼리를 쓰면 이렇게나 단순화된다!
+
+function cardIn(url) {
+    let id = document.getElementById('user_id').value
+    let name = document.getElementById('user_name').value
+  $.post(url, { date: getDate(), memberid: id, username: name }, 'json')
+  .done(function(jqXHR) {
+    alert("예약되었습니다." );
+    console.log(jqXHR);
+  })
+  .fail(function(jqXHR) {
+    alert("예약에 실패했습니다." );
+    console.log(jqXHR.message);
+  });
+}
+
+function cardOut(url) {
+    let id = document.getElementById('user_id').value
+  $.post(url, { date: getDate(), memberid: id }, 'json')
+  .done(function(jqXHR) {
+    alert("퇴실하였습니다." );
+    console.log(jqXHR);
+  })
+  .fail(function(jqXHR) {
+    alert("에러가 발생했습니다." );
+    console.log(jqXHR.message);
+  });
+}
+
+function cardInWeekend(url) {
+    let id = document.getElementById('user_id').value
+    let name = document.getElementById('user_name').value
+    let date = document.getElementById('resv_date').value
+    let intime = document.getElementById('resv_intime').value
+    let outtime = document.getElementById('resv_outtime').value
+  $.post(url, { date: date, memberid: id, username: name, resintime: intime, resouttime: outtime }, 'json')
+  .done(function(jqXHR) {
+    alert("예약되었습니다." );
+    console.log(jqXHR);
+  })
+  .fail(function(jqXHR) {
+    alert("예약에 실패했습니다." );
+    console.log(jqXHR);
+  });
+}
+
+function getDate() {
+  var date = new Date(); 
+var year = date.getFullYear(); 
+var month = new String(date.getMonth()+1); 
+var day = new String(date.getDate()); 
+
+// 한자리수일 경우 0을 채워준다. 
+if(month.length == 1){ 
+  month = "0" + month; 
+} 
+if(day.length == 1){ 
+  day = "0" + day; 
+} 
+
+return (year + "-" + month + "-" + day);
+}
+
+</script>
 </head>
 <body>
-    <link rel="stylesheet" href="stylesheets/entry.css" />
-    <div class="card_debug">
-        <div class="id_info">
-	    <div class="profile">
-		님, 환영합니다!
-	    </div>
-	    <div class="setting_button">
-		<input type="button" id="login" value="Settings" />   
-	    </div>
-	    <div class="close_button">
-		<input type="button" id="exit "value="Exit" onClick="self.close();" />
-	    </div>
-	</div>
-    </div> 
+	<input type="text" id="login_card_no" placeholder="카드번호" value="<%=cardno%>">
+<input type="text" id="user_id" placeholder="사용자 아이디">
+<input type="text" id="user_pw" placeholder="사용자 비밀번호">
+<input type="text" id="user_name" placeholder="사용자 이름" readonly>
+<br>
+<input type="text" id="token" style="width:1200px" placeholder="토큰" value="" readonly>
+<br>
+<input type="text" id="resv_date" placeholder="출입날짜 (주말)">
+<input type="text" id="resv_intime" placeholder="출입시간 (주말)">
+<input type="text" id="resv_outtime" placeholder="퇴실시간 (주말)">
+<br><br>
+
+<button onClick="appLogin('http://in.econovation.kr:3000/process/login')">앱 로그인 테스트</button>
+<button onClick="cardLogin('http://in.econovation.kr:3000/process/card/login')">카드 로그인 테스트</button>
+<button onClick="cardRegister('http://in.econovation.kr:3000/process/card/register')">카드 등록 테스트</button>
+<button onClick="cardIn('http://in.econovation.kr:3000/process/reservation/day')">카드 출입신청 테스트 (주중)</button>
+<button onClick="cardInWeekend('http://in.econovation.kr:3000/process/reservation/holyday')">카드 출입신청 테스트 (주말)</button>
+<button onClick="cardOut('http://in.econovation.kr:3000/process/reservation/out')">퇴실 테스트</button>
 </body>
 </html>
-
 
