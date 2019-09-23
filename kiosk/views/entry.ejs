@@ -28,7 +28,7 @@
   		.done(function(jqXHR) {
     		console.log(jqXHR);
     		//jqXHR은 이미 파싱된 json 객체!
-    		document.getElementById('user_name').innerHTML = jqXHR.username;
+    		document.getElementById('user_name').innerHTML = jqXHR.username+"님, 환영합니다!";
   		});
 	}
 	</script>
@@ -40,7 +40,7 @@
         <div class="id_info">
 	<% if(cardno != '0') { %>
 	    <div class="profile">
-			<div id="user_name"></div><div id="greetings">님, 환영합니다!</div>
+			<div id="user_name"></div>
 		</div>
 		<input type="text" id="token" style="width:400px" placeholder="토큰" value="" readonly hidden>
 	    <div class="buttonWrapper">
