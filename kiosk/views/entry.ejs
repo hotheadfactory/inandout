@@ -24,12 +24,12 @@
 		}
 		if(timeout === 0) {
 			delete_cookie('timeout');
-			document.getElementById('card_message').value = '시간이 초과되었습니다.';
+			document.getElementById('card_message').innerHTML = '시간이 초과되었습니다.';
 	    	setTimeout(function() {
 			self.close();
 			}, 2000);
 		}
-		document.getElementById('card_message').value = timeout+"초 남았습니다.";
+		document.getElementById('card_message').innerHTML = timeout+"초 남았습니다.";
 		setCookie('timeout', timeout-1);
 		setTimeout(function() {
 			location.reload();
