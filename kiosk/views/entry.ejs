@@ -5,6 +5,18 @@
     <link href="https://fonts.googleapis.com/css?family=Noto+Sans+KR&display=swap" rel="stylesheet">
 	<script src="http://code.jquery.com/jquery-1.10.2.js"></script>
 	<script type="text/javascript">
+
+	var setCookie = function(name, value, exp) {
+ 		var date = new Date();
+  		date.setTime(date.getTime() + exp*24*60*60*1000);
+  		document.cookie = namae + '=' + value + ';expires=' + date.toUTCString() + ';path=/';
+	};
+
+	var getCookie = function(name) {
+  		var value = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+  		return value? value[2] : null;
+	};
+
 	function auto_close() {
 		try{
 			let timeout = getCookie('timeout');
