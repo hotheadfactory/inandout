@@ -28,7 +28,7 @@
   		.done(function(jqXHR) {
     		console.log(jqXHR);
     		//jqXHR은 이미 파싱된 json 객체!
-    		document.getElementById('user_name').innerHTML = jqXHR.username+"님, 환영합니다!";
+    		document.getElementById('user_name').innerHTML = jqXHR.username+" 님, 환영합니다!";
   		});
 	}
 	</script>
@@ -44,21 +44,18 @@
 		</div>
 		<input type="text" id="token" style="width:400px" placeholder="토큰" value="" readonly hidden>
 	    <div class="buttonWrapper">
-	    	<% if(cardno == '0f62c23f') { %>
 	    	<div id="in_button" class="inoutbutton">
-		    <div class="big">IN</big>
-		    <div class="button_sub">출입신청을 합니다.</big>
+		    <div class="big">IN</div>
+		    <div class="button_sub">출입신청을 합니다.</div>
 	    	</div>
-	    	<% } else if(cardno == '1d30f75a') { %>
 	    	<div id="out_button" class="inoutbutton">
 		    <div class="big">OUT</div>
 		    <div class="button_sub">퇴실합니다.</div>
 	    	</div>
-	    	<% } else { %>
-	    	<div id="not_allowed" class="inoutbutton">
+	    	<!--div id="not_allowed" class="inoutbutton">
 		    <div class="warning">출입이 불가능합니다.</div>
 		    <div class="button_sub">오늘 오후 8시 전 예약자만<br>출입할 수 있습니다.</div>
-	    	</div>
+	    	</div-->
 		<% } %>
 	    </div>
 	    <div class="setting_button">
