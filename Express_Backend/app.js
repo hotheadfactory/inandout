@@ -1,6 +1,7 @@
 const express = require("express");
 const path = require("path");
 const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
 const mysql = require("mysql");
 const jwt = require("jsonwebtoken");
 const SECRET_KEY = require("./config/secret");
@@ -17,6 +18,7 @@ const app = express();
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cookieParser());
 app.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
@@ -58,19 +60,28 @@ app.post("/process/login", async function(req, res) {
   const paramPassword = req.body["password"];
   const paramType = req.body["type"];
   if (!pool)
-    res.status(500).send({ status: 500, message: "데이터베이스에 연결되어 있지 않습니다." });
+    res
+      .status(500)
+      .send({ status: 500, message: "데이터베이스에 연결되어 있지 않습니다." });
   try {
     const rows = await authUser(paramId, paramPassword, paramType);
     if (!rows) throw new Error("사용자가 존재하지 않습니다.");
-    if (!rows[0]["asigned"]) throw new Error("아직 가입승인이 이루어지지 않았습니다.");
+    if (!rows[0]["asigned"])
+      throw new Error("아직 가입승인이 이루어지지 않았습니다.");
     const payload = {
       id: rows[0][`${paramType}id`],
       username: rows[0].username
     };
-    jwt.sign(payload, SECRET_KEY.jwt, { expiresIn: 86400 }, (err, token) => {
-      if (err) res.status(200).json(successFalse(err));
-      res.status(200).json(successTrue(token));
-    });
+    jwt.sign(
+      payload,
+      SECRET_KEY.jwt,
+      { expiresIn: 60 * 60 * 24 },
+      (err, token) => {
+        if (err) res.status(200).json(successFalse(err));
+        res.cookie("token", token, { maxAge: 60 * 60 * 24 * 1000 });
+        res.status(200).json(successTrue(token));
+      }
+    );
   } catch (e) {
     res.status(500).send({ status: 500, message: e.message });
   }
@@ -108,7 +119,9 @@ app.post("/process/join/member", async function(req, res) {
   let parampin = req.body.pin;
   let paramName = req.body.username;
   if (!pool)
-    res.status(500).send({ status: 500, message: "데이터베이스에 연결되어 있지 않습니다." });
+    res
+      .status(500)
+      .send({ status: 500, message: "데이터베이스에 연결되어 있지 않습니다." });
   try {
     const result = await joinUser(paramId, parampin, paramName);
     res.status(200).send({ status: 200, message: "success" });
@@ -144,14 +157,17 @@ const joinUser = function(id, pin, name) {
 app.post("/process/card/login", async function(req, res) {
   let paramCardNumber = req.body.cardnumber;
   if (!pool)
-    res.status(500).send({ status: 500, message: "데이터베이스에 연결되어 있지 않습니다." });
+    res
+      .status(500)
+      .send({ status: 500, message: "데이터베이스에 연결되어 있지 않습니다." });
   try {
     const result1 = await findMemberid(paramCardNumber);
     if (!result1) throw new Error("등록되지 않은 카드입니다.");
     const memberid = result1[0]["memberid"];
     const result2 = await findUsername(memberid);
     if (!result2) throw new Error("일치하는 회원정보가 존재하지 않습니다.");
-    if (!result2[0]["asigned"]) throw new Error("아직 승인되지 않은 회원입니다.");
+    if (!result2[0]["asigned"])
+      throw new Error("아직 승인되지 않은 회원입니다.");
     const username = result2[0]["username"];
     const payload = {
       id: memberid,
@@ -159,6 +175,7 @@ app.post("/process/card/login", async function(req, res) {
     };
     jwt.sign(payload, SECRET_KEY.jwt, { expiresIn: 86400 }, (err, token) => {
       if (err) res.status(200).json(successFalse(err));
+      res.cookie("token", token, { maxAge: 60 * 60 * 24 * 1000 });
       res.status(200).json(successTrue(token));
     });
   } catch (e) {
@@ -212,11 +229,21 @@ const findUsername = function(memberid) {
   });
 };
 
-app.post("/process/card/register", async function(req, res) {
+app.post("/process/logout", isLogined, function(req, res) {
+  if (req.cookies.token) {
+    res.clearCookie("token");
+    res.status(200).send({ status: 200, message: "success" });
+  }
+  res.status(400).send({ status: 400, message: "fail" });
+});
+
+app.post("/process/card/register", isLogined, async function(req, res) {
   let paramMemberId = req.body.memberid;
   let paramCardNumber = req.body.cardnumber;
   if (!pool)
-    res.status(500).send({ status: 500, message: "데이터베이스에 연결되어 있지 않습니다." });
+    res
+      .status(500)
+      .send({ status: 500, message: "데이터베이스에 연결되어 있지 않습니다." });
   try {
     const result = await registCard(paramMemberId, paramCardNumber);
     if (!result) throw new Error("이미 등록된 카드입니다.");
@@ -251,14 +278,47 @@ const registCard = function(memberid, cardnumber) {
   });
 };
 
-app.post("/process/reservation/day", async function(req, res) {
+function isLogined(req, res, next) {
+  const token =
+    req.headers["x-access-token"] ||
+    req.query.token ||
+    req.body.token ||
+    req.cookies.token;
+  console.log(token);
+  if (!token) {
+    return res.status(403).json({
+      success: false,
+      message: "not logged in"
+    });
+  }
+  jwt.verify(token, SECRET_KEY.jwt, (err, decoded) => {
+    if (err) {
+      console.log(err);
+      return res.status(403).json({
+        success: false,
+        message: "만료"
+      });
+    }
+    req.body.payload = decoded;
+    next();
+  });
+}
+
+app.post("/process/reservation/day", isLogined, async function(req, res) {
+  console.log(req.body.payload);
   let paramDate = req.body.date;
   let paramMemberId = req.body.memberid;
   let paramUsername = req.body.username;
   if (!pool)
-    res.status(500).send({ status: 500, message: "데이터베이스에 연결되어 있지 않습니다." });
+    res
+      .status(500)
+      .send({ status: 500, message: "데이터베이스에 연결되어 있지 않습니다." });
   try {
-    const result = await reservationOfDay(paramDate, paramMemberId, paramUsername);
+    const result = await reservationOfDay(
+      paramDate,
+      paramMemberId,
+      paramUsername
+    );
     if (!result) throw new Error("이미 예약이 되어있습니다.");
     res.status(200).send({ status: 200, message: "success" });
   } catch (e) {
@@ -290,14 +350,16 @@ const reservationOfDay = function(date, memberid, username) {
     });
   });
 };
-app.post("/process/reservation/holyday", async function(req, res) {
+app.post("/process/reservation/holyday", isLogined, async function(req, res) {
   let paramDate = req.body.date;
   let paramMemberId = req.body.memberid;
   let paramUsername = req.body.username;
   let paramResInTime = req.body.resintime;
   let paramResOutTime = req.body.resouttime;
   if (!pool)
-    res.status(500).send({ status: 500, message: "데이터베이스에 연결되어 있지 않습니다." });
+    res
+      .status(500)
+      .send({ status: 500, message: "데이터베이스에 연결되어 있지 않습니다." });
   try {
     const result = await reservationOfHolyday(
       paramDate,
@@ -313,7 +375,13 @@ app.post("/process/reservation/holyday", async function(req, res) {
   }
 });
 
-const reservationOfHolyday = function(date, memberid, username, resInTime, resOutTime) {
+const reservationOfHolyday = function(
+  date,
+  memberid,
+  username,
+  resInTime,
+  resOutTime
+) {
   return new Promise((resolve, reject) => {
     pool.getConnection(function(err, connection) {
       if (err) {
@@ -322,7 +390,13 @@ const reservationOfHolyday = function(date, memberid, username, resInTime, resOu
       }
       console.log("데이어베이스 연결 스레드 아이디 : ", connection.threadId);
       const tablename = "reservation";
-      const culumns = ["memberid", "username", "resday", "resintime", "resouttime"];
+      const culumns = [
+        "memberid",
+        "username",
+        "resday",
+        "resintime",
+        "resouttime"
+      ];
       const executeSql = connection.query(
         `insert into ${tablename}(??) values("${memberid}","${username}","${date}","${resInTime}","${resOutTime}")`,
         [culumns],
@@ -338,10 +412,13 @@ const reservationOfHolyday = function(date, memberid, username, resInTime, resOu
   });
 };
 
-app.post("/process/reservation/out", async function(req, res) {
+app.post("/process/reservation/out", isLogined, async function(req, res) {
   let paramMemberId = req.body.memberid;
   let paramDate = req.body.date;
-  if (!pool) res.status(500).send({ status: 500, message: "데이터베이스에 문제가 있습니다." });
+  if (!pool)
+    res
+      .status(500)
+      .send({ status: 500, message: "데이터베이스에 문제가 있습니다." });
   try {
     const result = await outRoom(paramDate, paramMemberId);
     if (!result) throw new Error("퇴실가능한 예약이 존재하지 않습니다.");
