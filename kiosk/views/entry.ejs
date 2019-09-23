@@ -35,13 +35,13 @@
 	</script>
 	
 </head>
-<body<% if(cardno == '0') { %> onload="auto_close();"<% } else { %> onload="cardLogin('http://in.econovation.kr:3000/process/card/login');"<% } %>
+<body<% if(cardno == '0') { %> onload="auto_close();"<% } else { %> onload="cardLogin('http://in.econovation.kr:3000/process/card/login');"<% } %>>
     <link rel="stylesheet" href="stylesheets/entry.css" />
     <div class="card_debug">
         <div class="id_info">
 	<% if(cardno != '0') { %>
 	    <div class="profile">
-		<div id="user_name"></div>님, 환영합니다!
+		<div id="user_name" value=""></div>님, 환영합니다!
 		</div>
 		<input type="text" id="token" style="width:1200px" placeholder="토큰" value="" readonly>
 	    <div class="buttonWrapper">
