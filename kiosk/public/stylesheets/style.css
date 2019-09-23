@@ -164,3 +164,7 @@ body, table, div, input, p {
     font-size: 30px;
     padding-top: 7px;
 }
+
+.profile {
+    display: flex;
+}
