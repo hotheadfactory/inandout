@@ -15,13 +15,12 @@
     	$.post(url, { cardnumber : cardno }, 'json')
     	.done(function(jqXHR) {
       		console.log(jqXHR);
-	    	alert("인증 성공! 토큰: "+jqXHR.data);
       		document.getElementById('token').value = jqXHR.data;
       		useToken('http://in.econovation.kr:3000/token',jqXHR.data);
    		})
     	.fail(function(jqXHR) {
-     		console.log(jqXHR);                                                                                                                                                                                                                                                                                                                                                                        
-    		alert("인증 실패! ");
+     		console.log(jqXHR);
+			 window.location.href = '/entry/error';
     	});
 	}
 	function useToken(url,logintoken) {
