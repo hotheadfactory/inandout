@@ -24,17 +24,17 @@
 	function auto_close() {
 		let timeout = getCookie('timeout');
 		if(getCookie('timeout') == undefined) {
-			setCookie('timeout', 3);
+			setCookie('timeout', 4);
 		}
-		if(timeout <= 0) {
+		if(timeout == 1) {
 			delete_cookie('timeout');
 			document.getElementById('card_message').innerHTML = '시간이 초과되었습니다.';
 	    	setTimeout(function() {
 			self.close();
 			}, 2000);
 		}
-		if(timeout > 0) {
-			document.getElementById('card_message').innerHTML = timeout+"초 남았습니다.";
+		if(timeout >= 2) {
+			document.getElementById('card_message').innerHTML = (timeout-1)+"초 남았습니다.";
 			setCookie('timeout', timeout-1);
 			setTimeout(function() {
 				location.reload();
