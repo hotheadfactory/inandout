@@ -43,7 +43,8 @@
 		}
 	}
 	function cardLogin(url){
-    	let cardno = "<%=cardno%>";
+		let cardno = "<%=cardno%>";
+		delete_cookie('timeout');
     	$.post(url, { cardnumber : cardno }, 'json')
     	.done(function(jqXHR) {
       		console.log(jqXHR);
