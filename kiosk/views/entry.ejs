@@ -24,7 +24,7 @@
 	function auto_close() {
 		let timeout = getCookie('timeout');
 		if(timeout == null) {
-			setCookie('timeout', 4);
+			timeout = 4;
 		}
 		if(timeout == 1) {
 			delete_cookie('timeout');
@@ -35,11 +35,12 @@
 		}
 		if(timeout >= 2) {
 			document.getElementById('card_message').innerHTML = (timeout-1)+"초 남았습니다.";
-			setCookie('timeout', timeout-1);
+			timeout = timeout-1;
 			setTimeout(function() {
 				location.reload();
 			}, 1000);
 		}
+		setCookie('timeout', timeout);
 	}
 	function cardLogin(url){
     	let cardno = "<%=cardno%>";
