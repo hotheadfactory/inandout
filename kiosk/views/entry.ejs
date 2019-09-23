@@ -29,7 +29,6 @@
   		.done(function(jqXHR) {
     		console.log(jqXHR);
     		//jqXHR은 이미 파싱된 json 객체!
-    		document.getElementById('user_id').value = jqXHR.memberid;
     		document.getElementById('user_name').value = jqXHR.username;
   		});
 	}
