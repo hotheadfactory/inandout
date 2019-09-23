@@ -23,7 +23,7 @@
 
 	function auto_close() {
 		let timeout = getCookie('timeout');
-		if(getCookie('timeout') == undefined) {
+		if(timeout == 0) {
 			setCookie('timeout', 4);
 		}
 		if(timeout == 1) {
