@@ -33,11 +33,13 @@
 			self.close();
 			}, 2000);
 		}
-		document.getElementById('card_message').innerHTML = timeout+"초 남았습니다.";
-		setCookie('timeout', timeout-1);
-		setTimeout(function() {
-			location.reload();
+		if(timeout > 0) {
+			document.getElementById('card_message').innerHTML = timeout+"초 남았습니다.";
+			setCookie('timeout', timeout-1);
+			setTimeout(function() {
+				location.reload();
 			}, 1000);
+		}
 	}
 	function cardLogin(url){
     	let cardno = "<%=cardno%>";
