@@ -25,6 +25,7 @@
 		let timeout = getCookie('timeout');
 		if(timeout == null) {
 			timeout = 4;
+			setCookie('timeout', timeout);
 		}
 		if(timeout == 1) {
 			delete_cookie('timeout');
@@ -35,12 +36,11 @@
 		}
 		if(timeout >= 2) {
 			document.getElementById('card_message').innerHTML = (timeout-1)+"초 남았습니다.";
-			timeout = timeout-1;
+			setCookie('timeout', timeout-1);
 			setTimeout(function() {
 				location.reload();
 			}, 1000);
 		}
-		setCookie('timeout', timeout);
 	}
 	function cardLogin(url){
     	let cardno = "<%=cardno%>";
