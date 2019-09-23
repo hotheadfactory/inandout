@@ -84,4 +84,6 @@ app.get('/entry', function (req, res) {
 app.get('/login', function (req, res) {
     res.render("login.ejs");
 });
-
+app.get('/help', function (req, res) {
+  res.render("help.ejs");
+});
