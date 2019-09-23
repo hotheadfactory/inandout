@@ -229,7 +229,7 @@ const findUsername = function(memberid) {
   });
 };
 
-app.post("/process/logout", function(req, res) {
+app.post("/process/logout", isLogined, function(req, res) {
   if (req.cookies.token) {
     res.clearCookie("token");
     res.status(200).send({ status: 200, message: "success" });
@@ -237,7 +237,7 @@ app.post("/process/logout", function(req, res) {
   res.status(400).send({ status: 400, message: "fail" });
 });
 
-app.post("/process/card/register", async function(req, res) {
+app.post("/process/card/register", isLogined, async function(req, res) {
   let paramMemberId = req.body.memberid;
   let paramCardNumber = req.body.cardnumber;
   if (!pool)
@@ -278,7 +278,34 @@ const registCard = function(memberid, cardnumber) {
   });
 };
 
-app.post("/process/reservation/day", async function(req, res) {
+function isLogined(req, res, next) {
+  const token =
+    req.headers["x-access-token"] ||
+    req.query.token ||
+    req.body.token ||
+    req.cookies.token;
+  console.log(token);
+  if (!token) {
+    return res.status(403).json({
+      success: false,
+      message: "not logged in"
+    });
+  }
+  jwt.verify(token, SECRET_KEY.jwt, (err, decoded) => {
+    if (err) {
+      console.log(err);
+      return res.status(403).json({
+        success: false,
+        message: "만료"
+      });
+    }
+    req.body.payload = decoded;
+    next();
+  });
+}
+
+app.post("/process/reservation/day", isLogined, async function(req, res) {
+  console.log(req.body.payload);
   let paramDate = req.body.date;
   let paramMemberId = req.body.memberid;
   let paramUsername = req.body.username;
@@ -323,7 +350,7 @@ const reservationOfDay = function(date, memberid, username) {
     });
   });
 };
-app.post("/process/reservation/holyday", async function(req, res) {
+app.post("/process/reservation/holyday", isLogined, async function(req, res) {
   let paramDate = req.body.date;
   let paramMemberId = req.body.memberid;
   let paramUsername = req.body.username;
@@ -385,7 +412,7 @@ const reservationOfHolyday = function(
   });
 };
 
-app.post("/process/reservation/out", async function(req, res) {
+app.post("/process/reservation/out", isLogined, async function(req, res) {
   let paramMemberId = req.body.memberid;
   let paramDate = req.body.date;
   if (!pool)
