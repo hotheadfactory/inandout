@@ -18,9 +18,8 @@
 	};
 
 	function auto_close() {
-		try{
-			let timeout = getCookie('timeout');
-		}catch(e) {
+		let timeout = getCookie('timeout');
+		if(timeout === undefined) {
 			setCookie('timeout', 3);
 		}
 		if(timeout === 0) {
