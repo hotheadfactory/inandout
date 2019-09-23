@@ -6,9 +6,22 @@
 	<script src="http://code.jquery.com/jquery-1.10.2.js"></script>
 	<script type="text/javascript">
 	function auto_close() {
-	    setTimeout(function() {
-		self.close();
-	    }, 2000);
+		let timeout = getCookie('timeout');
+		if(timeout === undefined) {
+			setCookie('timeout', 3);
+		}
+		if(timeout === 0) {
+			delete_cookie('timeout');
+			document.getElementById('card_message').value = '시간이 초과되었습니다.';
+	    	setTimeout(function() {
+			self.close();
+			}, 2000);
+		}
+		document.getElementById('card_message').value = timeout+"초 남았습니다.";
+		setCookie('timeout', timeout-1);
+		setTimeout(function() {
+			location.reload();
+			}, 1000);
 	}
 	function cardLogin(url){
     	let cardno = "<%=cardno%>";
@@ -64,7 +77,7 @@
 		<input type="button" id="exit "value="취소" onClick="self.close();" />
 	    </div>
 	<% } else { %>
-	    <div class="card_error">카드가 인식되지 않았습니다!</div>
+	    <div class="card_message">카드가 인식되지 않았습니다!</div>
 	<% } %>
 	</div>
     </div> 
