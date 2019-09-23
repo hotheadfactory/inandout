@@ -27,7 +27,7 @@
 			setCookie('timeout', 4);
 		}
 		if(timeout == 1) {
-			delete_cookie('timeout');
+			setCookie('timeout', 0);
 			document.getElementById('card_message').innerHTML = '시간이 초과되었습니다.';
 	    	setTimeout(function() {
 			self.close();
