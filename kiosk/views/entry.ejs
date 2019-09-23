@@ -17,12 +17,16 @@
   		return value? value[2] : null;
 	};
 
+	function delete_cookie( name ) {
+  		document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+	}
+
 	function auto_close() {
 		let timeout = getCookie('timeout');
-		if(timeout === null) {
+		if(!timeout) {
 			setCookie('timeout', 3);
 		}
-		if(timeout === 0) {
+		if(timeout <= 0) {
 			delete_cookie('timeout');
 			document.getElementById('card_message').innerHTML = '시간이 초과되었습니다.';
 	    	setTimeout(function() {
@@ -89,7 +93,7 @@
 		<input type="button" id="exit "value="취소" onClick="self.close();" />
 	    </div>
 	<% } else { %>
-	    <div id="card_message">카드가 인식되지 않았습니다!</div>
+	    <div id="card_message"></div>
 	<% } %>
 	</div>
     </div> 
