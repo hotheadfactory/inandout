@@ -49,10 +49,22 @@
     	$.post(url, { cardnumber : cardno }, 'json')
     	.done(function(jqXHR) {
 			var time = new Date();
+			var hour = time.getHours();
+			var day = time.getDay();
       		console.log(jqXHR);
       		document.getElementById('token').value = jqXHR.data;
       		useToken('http://in.econovation.kr:3000/token',jqXHR.data);
-			document.getElementById('hour').innerHTML = time.getHours()+"시";
+			if(hour < 20 && day  == /[1-5]/ ) {
+				document.getElementById('buttonWrapper').innerHTML = `<div id="in_button" class="inoutbutton">
+		    	<div class="big">IN</div>
+		    	<div class="button_sub">출입신청을 합니다.</div>
+	    		</div>`
+			} else {
+				document.getElementById('buttonWrapper').innerHTML = `<div id="out_button" class="inoutbutton">
+		    	<div class="big">OUT</div>
+		    	<div class="button_sub">퇴실합니다.</div>
+	    		</div>`
+			}
    		})
     	.fail(function(jqXHR) {
      		console.log(jqXHR);
@@ -80,15 +92,8 @@
 		</div>
 		<div id="hour"></div>
 		<input type="text" id="token" style="width:400px" placeholder="토큰" value="" readonly hidden>
-	    <div class="buttonWrapper">
-	    	<div id="in_button" class="inoutbutton">
-		    <div class="big">IN</div>
-		    <div class="button_sub">출입신청을 합니다.</div>
-	    	</div>
-	    	<div id="out_button" class="inoutbutton">
-		    <div class="big">OUT</div>
-		    <div class="button_sub">퇴실합니다.</div>
-	    	</div>
+	    <div id="buttonWrapper">
+
 	    	<!--div id="not_allowed" class="inoutbutton">
 		    <div class="warning">출입이 불가능합니다.</div>
 		    <div class="button_sub">오늘 오후 8시 전 예약자만<br>출입할 수 있습니다.</div>
