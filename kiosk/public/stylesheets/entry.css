@@ -12,6 +12,10 @@ body {
     margin-left:-200px;
 }
 
+#card_count {
+    font-size: 50px;
+}
+
 #card_message {
     width: 250px;
     margin-left: auto;
