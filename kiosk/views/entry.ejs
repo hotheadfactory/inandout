@@ -35,7 +35,7 @@
 			}, 2000);
 		}
 		if(timeout >= 2) {
-			document.getElementById('card_message').innerHTML = (timeout-1)+"초 남았습니다.";
+			document.getElementById('card_count').innerHTML = timeout-1;
 			setCookie('timeout', timeout-1);
 			setTimeout(function() {
 				location.reload();
@@ -97,6 +97,7 @@
 		<input type="button" id="exit "value="취소" onClick="self.close();" />
 	    </div>
 	<% } else { %>
+		<div id="card_count"></div>
 	    <div id="card_message"></div>
 	<% } %>
 	</div>
