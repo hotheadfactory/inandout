@@ -48,9 +48,11 @@
 		delete_cookie('timeout');
     	$.post(url, { cardnumber : cardno }, 'json')
     	.done(function(jqXHR) {
+			var time = new Date();
       		console.log(jqXHR);
       		document.getElementById('token').value = jqXHR.data;
       		useToken('http://in.econovation.kr:3000/token',jqXHR.data);
+			document.getElementById('hour').innerHTML = time.getHours()+"시";
    		})
     	.fail(function(jqXHR) {
      		console.log(jqXHR);
@@ -76,6 +78,7 @@
 	    <div class="profile">
 			<div id="user_name"></div>
 		</div>
+		<div id="hour"></div>
 		<input type="text" id="token" style="width:400px" placeholder="토큰" value="" readonly hidden>
 	    <div class="buttonWrapper">
 	    	<div id="in_button" class="inoutbutton">
