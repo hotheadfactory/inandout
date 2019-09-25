@@ -60,10 +60,10 @@
 		    	<div class="button_sub">출입신청을 합니다.</div>
 	    		</div></a>`
 			} else {
-				document.getElementById('buttonWrapper').innerHTML = `<div id="out_button" class="inoutbutton">
+				document.getElementById('buttonWrapper').innerHTML = `<a href="/entry/out?token=`+jqXHR.data+`"><div id="out_button" class="inoutbutton">
 		    	<div class="big">OUT</div>
 		    	<div class="button_sub">퇴실합니다.</div>
-	    		</div>`
+	    		</div></a>`
 			}
    		})
     	.fail(function(jqXHR) {
