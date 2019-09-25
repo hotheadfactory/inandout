@@ -23,6 +23,7 @@ app.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
   res.header("Access-Control-Allow-Headers", "content-type, x-access-token");
+  res.header("Access-Control-Allow-Credentials", true);
   next();
 });
 
@@ -34,6 +35,43 @@ app.get("/token", function(req, res) {
     res.status(200).send({ memberid: decoded.id, username: decoded.username });
   });
 });
+
+app.post("/process/reservation/user", isLogined, async function(req, res) {
+  const data = req.body.payload;
+  const memberid = data.id;
+  const date = req.body.date;
+  try {
+    if (!pool) throw new Error("error");
+    const result = await findReservationByUser(memberid, date);
+    if (result.length > 0)
+      res.status(200).send({ isBooked: true, data: result });
+    res.status(200).send({ isBooked: false, data: null });
+  } catch (e) {
+    const code = e.code || 500;
+    res.status(code).send({ isBooked: null, message: e.message });
+  }
+});
+
+const findReservationByUser = function(id, date) {
+  return new Promise((resolve, reject) => {
+    pool.getConnection((err, connection) => {
+      if (err) {
+        if (connection) connection.release();
+        return reject({ code: 500, message: err.message });
+      }
+      const executeSql = connection.query(
+        `select * from reservation where memberid = "${id}" and resday = "${date}"`,
+        (err, rows) => {
+          console.log("실행한 sql : ", executeSql.sql);
+          console.log(rows);
+          connection.release();
+          if (err) return reject({ code: 400, message: err.message });
+          resolve(rows);
+        }
+      );
+    });
+  });
+};
 
 //로그인
 const successTrue = function(data) {
@@ -173,11 +211,19 @@ app.post("/process/card/login", async function(req, res) {
       id: memberid,
       username: username
     };
-    jwt.sign(payload, SECRET_KEY.jwt, { expiresIn: 86400 }, (err, token) => {
-      if (err) res.status(200).json(successFalse(err));
-      res.cookie("token", token, { maxAge: 60 * 60 * 24 * 1000 });
-      res.status(200).json(successTrue(token));
-    });
+    jwt.sign(
+      payload,
+      SECRET_KEY.jwt,
+      { expiresIn: 60 * 60 * 24 },
+      (err, token) => {
+        if (err) res.status(200).json(successFalse(err));
+        res.cookie("token", token, {
+          maxAge: 60 * 60 * 24 * 1000,
+          httpOnly: false
+        });
+        res.status(200).json(successTrue(token));
+      }
+    );
   } catch (e) {
     res.status(400).send({ status: 400, message: e.message });
   }
@@ -238,7 +284,8 @@ app.post("/process/logout", isLogined, function(req, res) {
 });
 
 app.post("/process/card/register", isLogined, async function(req, res) {
-  let paramMemberId = req.body.memberid;
+  const data = req.body.payload;
+  let paramMemberId = data.id;
   let paramCardNumber = req.body.cardnumber;
   if (!pool)
     res
@@ -305,10 +352,12 @@ function isLogined(req, res, next) {
 }
 
 app.post("/process/reservation/day", isLogined, async function(req, res) {
-  console.log(req.body.payload);
   let paramDate = req.body.date;
-  let paramMemberId = req.body.memberid;
-  let paramUsername = req.body.username;
+  let paramOptions = req.body.option;
+  const data = req.body.payload;
+  let paramMemberId = data.id;
+  let paramUsername = data.username;
+
   if (!pool)
     res
       .status(500)
@@ -317,7 +366,8 @@ app.post("/process/reservation/day", isLogined, async function(req, res) {
     const result = await reservationOfDay(
       paramDate,
       paramMemberId,
-      paramUsername
+      paramUsername,
+      paramOptions
     );
     if (!result) throw new Error("이미 예약이 되어있습니다.");
     res.status(200).send({ status: 200, message: "success" });
@@ -326,7 +376,7 @@ app.post("/process/reservation/day", isLogined, async function(req, res) {
   }
 });
 
-const reservationOfDay = function(date, memberid, username) {
+const reservationOfDay = function(date, memberid, username, options) {
   return new Promise((resolve, reject) => {
     pool.getConnection(function(err, connection) {
       if (err) {
@@ -335,9 +385,15 @@ const reservationOfDay = function(date, memberid, username) {
       }
       console.log("데이어베이스 연결 스레드 아이디 : ", connection.threadId);
       const tablename = "reservation";
-      const culumns = ["memberid", "username", "resday", "resintime"];
+      const culumns = [
+        "memberid",
+        "username",
+        "resday",
+        "resintime",
+        "options"
+      ];
       const executeSql = connection.query(
-        `insert into ${tablename}(??) values("${memberid}","${username}","${date}","${date} 20:00:00")`,
+        `insert into ${tablename}(??) values("${memberid}","${username}","${date}","${date} 20:00:00","${options}")`,
         [culumns],
         (err, rows) => {
           console.log("실행한 sql : ", executeSql.sql);
@@ -352,10 +408,11 @@ const reservationOfDay = function(date, memberid, username) {
 };
 app.post("/process/reservation/holyday", isLogined, async function(req, res) {
   let paramDate = req.body.date;
-  let paramMemberId = req.body.memberid;
-  let paramUsername = req.body.username;
+  let paramOptions = req.body.option;
+  const data = req.body.payload;
+  let paramMemberId = data.id;
+  let paramUsername = data.username;
   let paramResInTime = req.body.resintime;
-  let paramResOutTime = req.body.resouttime;
   if (!pool)
     res
       .status(500)
@@ -366,7 +423,7 @@ app.post("/process/reservation/holyday", isLogined, async function(req, res) {
       paramMemberId,
       paramUsername,
       paramResInTime,
-      paramResOutTime
+      paramOptions
     );
     if (!result) throw new Error("이미 예약이 되어있습니다.");
     res.status(200).send({ status: 200, message: "success" });
@@ -380,7 +437,7 @@ const reservationOfHolyday = function(
   memberid,
   username,
   resInTime,
-  resOutTime
+  options
 ) {
   return new Promise((resolve, reject) => {
     pool.getConnection(function(err, connection) {
@@ -395,10 +452,10 @@ const reservationOfHolyday = function(
         "username",
         "resday",
         "resintime",
-        "resouttime"
+        "options"
       ];
       const executeSql = connection.query(
-        `insert into ${tablename}(??) values("${memberid}","${username}","${date}","${resInTime}","${resOutTime}")`,
+        `insert into ${tablename}(??) values("${memberid}","${username}","${date}","${date} ${resInTime}","${options}")`,
         [culumns],
         (err, rows) => {
           console.log("실행한 sql : ", executeSql.sql);
@@ -413,7 +470,8 @@ const reservationOfHolyday = function(
 };
 
 app.post("/process/reservation/out", isLogined, async function(req, res) {
-  let paramMemberId = req.body.memberid;
+  const data = req.body.payload;
+  let paramMemberId = data.id;
   let paramDate = req.body.date;
   if (!pool)
     res
