@@ -55,15 +55,15 @@
       		document.getElementById('token').value = jqXHR.data;
       		useToken('http://in.econovation.kr:3000/token',jqXHR.data);
 			if(hour < 20 && day  == /[1-5]/ ) {
-				document.getElementById('buttonWrapper').innerHTML = `<a href="/entry/in?token=`+jqXHR.data+`"><div id="in_button" class="inoutbutton">
+				document.getElementById('buttonWrapper').innerHTML = `<div id="in_button" class="inoutbutton" onclick="location.href='/entry/in?token=`+jqXHR.data+`'">
 		    	<div class="big">IN</div>
 		    	<div class="button_sub">출입신청을 합니다.</div>
-	    		</div></a>`
+	    		</div>`
 			} else {
-				document.getElementById('buttonWrapper').innerHTML = `<a href="/entry/out?token=`+jqXHR.data+`"><div id="out_button" class="inoutbutton">
+				document.getElementById('buttonWrapper').innerHTML = `<div id="out_button" class="inoutbutton" onclick="location.href='/entry/out?token=`+jqXHR.data+`'">
 		    	<div class="big">OUT</div>
 		    	<div class="button_sub">퇴실합니다.</div>
-	    		</div></a>`
+	    		</div>`
 			}
    		})
     	.fail(function(jqXHR) {
