@@ -54,7 +54,7 @@
       		console.log(jqXHR);
       		document.getElementById('token').value = jqXHR.data;
       		useToken('http://in.econovation.kr:3000/token',jqXHR.data);
-			if(hour < 20 && day  == /[1-5]/ ) {
+			if(hour < 20 && (day >= 1 && day <= 5) ) {
 				document.getElementById('buttonWrapper').innerHTML = `<div id="in_button" class="inoutbutton" onclick="location.href='/entry/in?token=`+jqXHR.data+`'">
 		    	<div class="big">IN</div>
 		    	<div class="button_sub">출입신청을 합니다.</div>
@@ -80,8 +80,8 @@
   		});
 	}
 	</script>
-	
 </head>
+
 <body<% if(cardno == '0') { %> onload="auto_close();"<% } else { %> onload="cardLogin('http://in.econovation.kr:3000/process/card/login');"<% } %>>
     <link rel="stylesheet" href="stylesheets/entry.css" />
     <div class="card_debug">
@@ -115,5 +115,3 @@
     </div> 
 </body>
 </html>
-
-
