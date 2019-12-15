@@ -177,10 +177,10 @@ const joinUser = function(id, pin, name) {
       }
       console.log("데이어베이스 연결 스레드 아이디 : ", connection.threadId);
       const tableName = "member";
-      const culumns = ["memberid", "pin", "username"];
+      const columns = ["memberid", "pin", "username"];
       const executeSql = connection.query(
         `insert into ${tableName}(??) values("${id}","${pin}","${name}")`,
-        [culumns],
+        [columns],
         (err, rows) => {
           console.log("실행된 sql : ", executeSql.sql);
           connection.release();
@@ -309,10 +309,10 @@ const registCard = function(memberid, cardnumber) {
       }
       console.log("데이어베이스 연결 스레드 아이디 : ", connection.threadId);
       const tableName = "card";
-      const culumns = ["memberid", "cardnumber"];
+      const columns = ["memberid", "cardnumber"];
       const executeSql = connection.query(
         `insert into ${tableName}(??) values("${memberid}","${cardnumber}")`,
-        [culumns],
+        [columns],
         (err, rows) => {
           console.log("실행된 sql : ", executeSql.sql);
           connection.release();
